@@ -1,3 +1,4 @@
+# shellcheck shell=bash
 # deps.sh - Detect and optionally install optional runtime dependencies
 # (gum and jq). The CLI works without them, but the experience is much
 # nicer when they are present.

@@ -1,3 +1,4 @@
+# shellcheck shell=bash
 # deps.sh - Optional dependency management subcommand.
 # Provides `mainwp deps status` and `mainwp deps install` for users
 # who installed mainwp outside of Homebrew (and therefore did not get

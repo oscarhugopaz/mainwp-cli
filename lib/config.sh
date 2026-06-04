@@ -102,7 +102,9 @@ mainwp_config_set_field() {
 	cfg="$(mainwp_config_load)"
 	# Build the jq expression by concatenation rather than embedding it in a
 	# command substitution. The mix of "..." and '...' inside $(...) trips
-	# some bash parsers (and shellcheck SC1073).
+	# some bash parsers (and shellcheck SC1073). The $p inside the single
+	# quotes is intentional - it is consumed by jq, not bash.
+	# shellcheck disable=SC2016
 	local expr='.profiles[$p] //= {} | '"$path"
 	cfg="$(printf '%s' "$cfg" | jq --arg p "$MAINWP_PROFILE" --arg v "$value" "$expr")"
 	mainwp_config_save "$cfg"
