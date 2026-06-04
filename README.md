@@ -50,6 +50,8 @@ $ mainwp sites list
 - [Environment variables](#environment-variables)
 - [Exit codes](#exit-codes)
 - [Development](#development)
+- [Releasing](#releasing)
+- [Related projects](#related-projects)
 - [License](#license)
 
 ## Requirements
@@ -516,12 +518,97 @@ lib/                       shared libraries
     posts.sh, pages.sh, batch.sh
     completion.sh
 completions/               static bash + zsh completion scripts
-tests/                     bats tests (run with: bats tests/)
+tests/                     smoke tests (run with: ./tests/smoke.sh)
+scripts/                   release automation
 ```
 
 Bash 3.2 compatibility is required (it's the macOS system bash). The
 helpers in `_common.sh` use the "printf + eval" trick to mutate global
 arrays because bash 3.2 has no `declare -g`.
+
+## Releasing
+
+Releases are cut with `scripts/release.sh`, which automates the whole
+"tag a version and update the Homebrew tap" flow.
+
+### Prerequisites
+
+- A clean working tree on `main` in both `mainwp-cli` and
+  `homebrew-mainwp-cli` (the script checks and refuses otherwise)
+- `git`, `curl`, `shasum`, `shellcheck`, and `shfmt` on `$PATH`
+- The tap checked out as a sibling of `mainwp-cli` (default), or
+  pointed at with `--tap-dir PATH`
+- Push access to both repos and a logged-in `gh` (the script pushes
+  directly with `git`, no `gh` needed for the release itself)
+
+### Releasing a specific version
+
+```bash
+cd /path/to/mainwp-cli
+./scripts/release.sh 0.3.0
+```
+
+What the script does, in order:
+
+1. Replaces `MAINWP_VERSION` in `bin/mainwp` with the new version.
+2. Runs `shellcheck`, `shfmt -d`, and `./tests/smoke.sh`. If any of
+   these fail, the release aborts before any push.
+3. Commits the version bump, pushes `main` to `origin`.
+4. Tags `v0.3.0` locally and pushes the tag to `origin`.
+5. Downloads the tarball GitHub generated for the tag
+   (`https://github.com/oscarhugopaz/mainwp-cli/archive/refs/tags/v0.3.0.tar.gz`)
+   and computes its SHA256, retrying up to 10 times because the
+   tarball can take a few seconds to become available after the tag
+   is pushed.
+6. Rewrites `url` and `sha256` in `homebrew-mainwp-cli/Formula/mainwp.rb`
+   to point at the new release.
+7. Commits the formula change and pushes to the tap.
+
+You will be prompted for confirmation before the first push. Pass
+`--yes` to skip the prompt (useful in CI).
+
+### Auto-incrementing the patch
+
+With no argument, the script reads the current `MAINWP_VERSION` and
+bumps the patch number:
+
+```bash
+./scripts/release.sh
+# ==> Auto-incrementing version: 0.2.0 -> 0.2.1
+# ...
+```
+
+### Optional flags
+
+| Flag            | Effect                                                                                    |
+| --------------- | ----------------------------------------------------------------------------------------- |
+| `--tap-dir PATH`| Location of the tap repo. Default: `../homebrew-mainwp-cli`.                              |
+| `--brew-test`   | After updating the formula, run `brew install --build-from-source`, `brew test`, and `brew uninstall` against it before pushing. Catches formula regressions locally. |
+| `--skip-tests`  | Skip the shellcheck/shfmt/smoke step. Use when iterating on the script itself.            |
+| `--yes`, `-y`   | Skip the confirmation prompt before pushing.                                             |
+| `--help`, `-h`  | Show the script's own usage.                                                              |
+
+### Examples
+
+```bash
+# Cut 0.3.0 with a local formula test
+./scripts/release.sh 0.3.0 --brew-test
+
+# Cut 0.3.0 in a CI-like environment (no prompt)
+./scripts/release.sh 0.3.0 --yes
+
+# Cut 0.3.0 with the tap in a non-default location
+./scripts/release.sh 0.3.0 --tap-dir ~/work/homebrew-mainwp-cli
+```
+
+### What happens after the script finishes
+
+- The release is visible at
+  <https://github.com/oscarhugopaz/mainwp-cli/releases/tag/v0.3.0>
+- Anyone with the tap installed can now run
+  `brew update && brew upgrade mainwp` to get the new version.
+- The CI workflow in `homebrew-mainwp-cli` re-runs `brew audit` and
+  `brew test` against the new formula to make sure it installs.
 
 ## Related projects
 
