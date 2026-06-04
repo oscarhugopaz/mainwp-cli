@@ -1,0 +1,39 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  lint:
+    name: ShellCheck + shfmt
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install tools
+        run: brew install shellcheck shfmt
+      - name: ShellCheck
+        run: shellcheck bin/mainwp lib/*.sh lib/commands/*.sh
+      - name: shfmt diff
+        run: shfmt -d bin lib
+
+  smoke:
+    name: Smoke tests
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install gum + jq
+        run: brew install gum jq
+      - name: Run smoke tests
+        run: ./tests/smoke.sh
+
+  formula:
+    name: Brew formula audit
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Tap and audit
+        run: |
+          brew tap oscarhugopaz/mainwp-cli https://github.com/oscarhugopaz/homebrew-mainwp-cli
+          brew audit --strict --new oscarhugopaz/mainwp-cli/mainwp || true

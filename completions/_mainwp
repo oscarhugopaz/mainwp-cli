@@ -1,0 +1,84 @@
+#compdef mainwp
+# Zsh completion for mainwp
+# Source: source <(mainwp completion zsh)
+
+_mainwp() {
+  local -a commands
+  commands=(
+    'init:Interactive setup (URL + API key)'
+    'config:Manage configuration and profiles'
+    'sites:Manage child sites'
+    'clients:Manage clients'
+    'tags:Manage tags'
+    'updates:Manage updates'
+    'costs:Manage cost tracker records'
+    'users:Manage users'
+    'settings:Manage dashboard settings'
+    'monitoring:Manage uptime monitors'
+    'api-keys:Manage REST API keys'
+    'posts:Manage posts across sites'
+    'pages:Manage pages across sites'
+    'batch:Global batch orchestration'
+    'completion:Print shell completion script'
+    'help:Show help for a command'
+  )
+
+  _arguments -C \
+    '--profile[Use a named profile]:profile:' \
+    '--json[Output raw JSON]' \
+    '--plain[Output plain text]' \
+    '--no-input[Disable interactive prompts]' \
+    '(-q --quiet)'{-q,--quiet}'[Suppress non-essential output]' \
+    '(-V --version)'{-V,--version}'[Print version and exit]' \
+    '(-h --help)'{-h,--help}'[Show help]' \
+    '1: :->command' \
+    '*::arg:->args'
+
+  case $state in
+    command)
+      _describe 'command' commands
+      ;;
+    args)
+      case $words[1] in
+        sites)
+          _values 'subcommand' list basic count get security add edit sync reconnect disconnect plugins themes remove
+          ;;
+        clients)
+          _values 'subcommand' list count get add edit remove fields
+          ;;
+        tags)
+          _values 'subcommand' list get add edit remove
+          ;;
+        updates)
+          _values 'subcommand' list for-site ignored run-all run-site wp plugins themes
+          ;;
+        costs)
+          _values 'subcommand' list get add edit remove
+          ;;
+        users)
+          _values 'subcommand' list create edit delete import
+          ;;
+        settings)
+          _values 'subcommand' general advanced monitoring emails cost-tracker insights api-backups tools
+          ;;
+        monitoring)
+          _values 'subcommand' list basic count get heartbeat incidents check settings
+          ;;
+        api-keys)
+          _values 'subcommand' list add edit delete
+          ;;
+        posts)
+          _values 'subcommand' list get create edit update-status delete
+          ;;
+        pages)
+          _values 'subcommand' list get create edit update-status delete
+          ;;
+        completion)
+          _values 'shell' bash zsh
+          ;;
+      esac
+      ;;
+  esac
+}
+
+_mainwp "$@"

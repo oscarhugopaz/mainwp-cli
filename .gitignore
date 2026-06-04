@@ -1,0 +1,19 @@
+# Build artifacts
+*.tar.gz
+*.zip
+*.dmg
+
+# macOS
+.DS_Store
+._*
+
+# Editor
+.idea/
+.vscode/
+*.swp
+
+# Test/runtime
+*.log
+tmp/
+.env
+.env.local

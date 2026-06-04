@@ -1,0 +1,233 @@
+#!/usr/bin/env bash
+# mainwp - Command-line interface for MainWP Dashboard REST API v2
+# https://github.com/oscarhugopaz/mainwp-cli
+
+set -euo pipefail
+
+MAINWP_VERSION="0.1.0"
+MAINWP_API_BASE_PATH="wp-json/mainwp/v2"
+
+# Resolve the directory holding this script and its lib/ tree, following
+# symlinks so installs that symlink the binary (e.g. Homebrew) still work.
+_mainwp_resolve_root() {
+	local src="${BASH_SOURCE[0]}"
+	while [[ -L "$src" ]]; do
+		local dir
+		dir="$(cd -P "$(dirname "$src")" >/dev/null 2>&1 && pwd)"
+		src="$(readlink "$src")"
+		[[ "$src" != /* ]] && src="$dir/$src"
+	done
+	cd -P "$(dirname "$src")/.." >/dev/null 2>&1 && pwd
+}
+
+MAINWP_ROOT="$(_mainwp_resolve_root)"
+export MAINWP_ROOT
+export MAINWP_VERSION
+export MAINWP_API_BASE_PATH
+
+# Load libraries in dependency order.
+# shellcheck source=lib/output.sh
+. "$MAINWP_ROOT/lib/output.sh"
+# shellcheck source=lib/config.sh
+. "$MAINWP_ROOT/lib/config.sh"
+# shellcheck source=lib/api.sh
+. "$MAINWP_ROOT/lib/api.sh"
+# shellcheck source=lib/ui.sh
+. "$MAINWP_ROOT/lib/ui.sh"
+
+# Global flags resolved before command dispatch. Exported so sourced lib
+# files can read them without copying values around.
+export MAINWP_OUTPUT_FORMAT="table" # table | json | plain
+export MAINWP_INTERACTIVE=1         # disabled with --no-input
+export MAINWP_QUIET=0
+export MAINWP_PROFILE="default"
+
+# Internal scratch arrays used by lib/commands/_common.sh. They are
+# pre-declared at the top level so that helper functions can mutate them
+# without making them local (bash 3.2 has no `declare -g`).
+REMAINING=()
+MAINWP_KV_FLAGS=()
+export REMAINING
+export MAINWP_KV_FLAGS
+
+# Print the top-level help screen.
+mainwp_help() {
+	cat <<EOF
+mainwp ${MAINWP_VERSION} - MainWP Dashboard REST API v2 CLI
+
+Usage:
+  mainwp [GLOBAL OPTIONS] COMMAND [COMMAND OPTIONS] [ARGS...]
+
+Global Options:
+  --profile NAME       Use a named profile (default: "default")
+  --json               Output raw JSON from the API
+  --plain              Output plain text (no gum styling)
+  --no-input           Disable interactive prompts
+  -q, --quiet          Suppress non-essential output
+  -V, --version        Print version and exit
+  -h, --help           Show this help
+
+Commands:
+  init                 Interactive setup (URL + API key)
+  config               Manage configuration and profiles
+  sites                Manage child sites
+  clients              Manage clients
+  tags                 Manage tags
+  updates              Manage updates
+  costs                Manage cost tracker records
+  users                Manage users
+  settings             Manage dashboard settings
+  monitoring           Manage uptime monitors
+  api-keys             Manage REST API keys
+  posts                Manage posts across sites
+  pages                Manage pages across sites
+  batch                Global batch orchestration
+  completion           Print shell completion script (bash|zsh)
+  help                 Show help for a command
+
+Run \`mainwp help COMMAND\` for details on a specific command.
+EOF
+}
+
+# Print help for a specific command. Each command file is sourced and
+# expected to define a `cmd_<name>_help` function (where <name> uses
+# underscores instead of hyphens to stay a valid bash identifier).
+mainwp_command_help() {
+	local cmd="$1"
+	case "$cmd" in
+	help | init | config | sites | clients | tags | updates | costs | users | settings | monitoring | api-keys | posts | pages | batch)
+		# Source the file if it isn't loaded yet, then call the helper.
+		local script="$MAINWP_ROOT/lib/commands/${cmd}.sh"
+		if [[ -f "$script" ]]; then
+			# shellcheck source=/dev/null
+			. "$script"
+			# Replace hyphens with underscores for the bash function name.
+			local fn="cmd_${cmd//-/_}_help"
+			if declare -F "$fn" >/dev/null; then
+				"$fn"
+				return 0
+			fi
+		fi
+		mainwp_warn "No detailed help for '$cmd'. Run \`mainwp --help\` for an overview."
+		return 1
+		;;
+	*)
+		mainwp_warn "Unknown command '$cmd'."
+		return 1
+		;;
+	esac
+}
+
+# Parse global options from the argument vector, leaving only the command
+# and its arguments in the new array MAINWP_ARGS. Global flags are
+# recognised only up to the first non-flag argument; once a positional
+# (the subcommand) is seen, the rest of the line is passed through so
+# that commands can handle their own --help etc.
+mainwp_parse_globals() {
+	MAINWP_ARGS=()
+	while [[ $# -gt 0 ]]; do
+		case "$1" in
+		--profile)
+			MAINWP_PROFILE="$2"
+			shift 2
+			;;
+		--profile=*)
+			MAINWP_PROFILE="${1#*=}"
+			shift
+			;;
+		--json)
+			MAINWP_OUTPUT_FORMAT="json"
+			shift
+			;;
+		--plain)
+			MAINWP_OUTPUT_FORMAT="plain"
+			shift
+			;;
+		--no-input)
+			MAINWP_INTERACTIVE=0
+			shift
+			;;
+		-q | --quiet)
+			MAINWP_QUIET=1
+			shift
+			;;
+		-V | --version)
+			echo "mainwp ${MAINWP_VERSION}"
+			exit 0
+			;;
+		-h | --help)
+			# Only treat as a top-level help request if no subcommand was
+			# given yet. Otherwise let the subcommand handle it.
+			if [[ ${#MAINWP_ARGS[@]} -eq 0 ]]; then
+				mainwp_help
+				exit 0
+			else
+				MAINWP_ARGS+=("$1")
+				shift
+			fi
+			;;
+		--)
+			shift
+			while [[ $# -gt 0 ]]; do
+				MAINWP_ARGS+=("$1")
+				shift
+			done
+			;;
+		-*)
+			# Unknown global option - reject only if no positional yet.
+			if [[ ${#MAINWP_ARGS[@]} -eq 0 ]]; then
+				mainwp_die "Unknown option: $1. Run \`mainwp --help\`."
+			else
+				MAINWP_ARGS+=("$1")
+				shift
+			fi
+			;;
+		*)
+			MAINWP_ARGS+=("$1")
+			shift
+			;;
+		esac
+	done
+}
+
+# Dispatch to a subcommand file. Each file is expected to define a function
+# named `cmd_<command>()`.
+mainwp_dispatch() {
+	local cmd="${MAINWP_ARGS[0]:-help}"
+	if [[ ${#MAINWP_ARGS[@]} -gt 0 ]]; then
+		MAINWP_ARGS=("${MAINWP_ARGS[@]:1}")
+	fi
+
+	case "$cmd" in
+	help | -h | "")
+		if [[ ${#MAINWP_ARGS[@]} -gt 0 ]]; then
+			mainwp_command_help "${MAINWP_ARGS[0]}"
+		else
+			mainwp_help
+		fi
+		;;
+	completion)
+		. "$MAINWP_ROOT/lib/commands/completion.sh"
+		cmd_completion "${MAINWP_ARGS[@]}"
+		;;
+	init | config | sites | clients | tags | updates | costs | users | settings | monitoring | api-keys | posts | pages | batch)
+		local script="$MAINWP_ROOT/lib/commands/${cmd}.sh"
+		if [[ ! -f "$script" ]]; then
+			mainwp_die "Command '$cmd' is not yet implemented."
+		fi
+		# shellcheck source=/dev/null
+		. "$script"
+		local fn="cmd_${cmd}"
+		if ! declare -F "$fn" >/dev/null; then
+			mainwp_die "Command '$cmd' has no entry point."
+		fi
+		"$fn" "${MAINWP_ARGS[@]}"
+		;;
+	*)
+		mainwp_die "Unknown command: '$cmd'. Run \`mainwp --help\` for a list of commands."
+		;;
+	esac
+}
+
+mainwp_parse_globals "$@"
+mainwp_dispatch
