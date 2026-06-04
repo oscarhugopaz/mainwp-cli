@@ -6,6 +6,7 @@ _mainwp() {
   local -a commands
   commands=(
     'init:Interactive setup (URL + API key)'
+    'deps:Check or install optional dependencies'
     'config:Manage configuration and profiles'
     'sites:Manage child sites'
     'clients:Manage clients'
@@ -75,6 +76,9 @@ _mainwp() {
           ;;
         completion)
           _values 'shell' bash zsh
+          ;;
+        deps)
+          _values 'subcommand' status install
           ;;
       esac
       ;;

@@ -77,7 +77,7 @@ assert_contains "help lists config" "$out" "config"
 assert_contains "help lists init"   "$out" "init"
 
 printf '\n[2] help for subcommands\n'
-for cmd in init config sites clients tags updates costs users settings monitoring api-keys posts pages batch; do
+for cmd in init deps config sites clients tags updates costs users settings monitoring api-keys posts pages batch; do
   out="$(run_capture "help $cmd" 0 help "$cmd")"
   assert_contains "help $cmd is non-empty" "$out" "$cmd -"
 done
@@ -98,6 +98,14 @@ out="$(run_capture "bash completion" 0 completion bash)"
 assert_contains "bash completion header" "$out" "complete -F _mainwp_completions mainwp"
 out="$(run_capture "zsh completion" 0 completion zsh)"
 assert_contains "zsh completion header" "$out" "#compdef mainwp"
+
+printf '\n[5b] deps subcommand\n'
+out="$(run_capture "deps status" 0 deps status)"
+assert_contains "deps status prints Present" "$out" "Present:"
+out="$(run_capture "deps status json" 0 deps --json status)"
+assert_contains "deps JSON output" "$out" '"present"'
+out="$(run_capture "deps help" 0 help deps)"
+assert_contains "deps help lists status" "$out" "status"
 
 printf '\n[6] errors point to mainwp init when no profile is set\n'
 out="$(run_capture "sites list without config" 1 sites list --no-input)"

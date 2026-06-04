@@ -4,7 +4,7 @@
 
 set -euo pipefail
 
-MAINWP_VERSION="0.1.0"
+MAINWP_VERSION="0.2.0"
 MAINWP_API_BASE_PATH="wp-json/mainwp/v2"
 
 # Resolve the directory holding this script and its lib/ tree, following
@@ -34,6 +34,8 @@ export MAINWP_API_BASE_PATH
 . "$MAINWP_ROOT/lib/api.sh"
 # shellcheck source=lib/ui.sh
 . "$MAINWP_ROOT/lib/ui.sh"
+# shellcheck source=lib/deps.sh
+. "$MAINWP_ROOT/lib/deps.sh"
 
 # Global flags resolved before command dispatch. Exported so sourced lib
 # files can read them without copying values around.
@@ -69,6 +71,7 @@ Global Options:
 
 Commands:
   init                 Interactive setup (URL + API key)
+  deps                 Check or install optional dependencies
   config               Manage configuration and profiles
   sites                Manage child sites
   clients              Manage clients
@@ -95,7 +98,7 @@ EOF
 mainwp_command_help() {
 	local cmd="$1"
 	case "$cmd" in
-	help | init | config | sites | clients | tags | updates | costs | users | settings | monitoring | api-keys | posts | pages | batch)
+	help | init | deps | config | sites | clients | tags | updates | costs | users | settings | monitoring | api-keys | posts | pages | batch)
 		# Source the file if it isn't loaded yet, then call the helper.
 		local script="$MAINWP_ROOT/lib/commands/${cmd}.sh"
 		if [[ -f "$script" ]]; then
@@ -210,7 +213,7 @@ mainwp_dispatch() {
 		. "$MAINWP_ROOT/lib/commands/completion.sh"
 		cmd_completion "${MAINWP_ARGS[@]}"
 		;;
-	init | config | sites | clients | tags | updates | costs | users | settings | monitoring | api-keys | posts | pages | batch)
+	init | deps | config | sites | clients | tags | updates | costs | users | settings | monitoring | api-keys | posts | pages | batch)
 		local script="$MAINWP_ROOT/lib/commands/${cmd}.sh"
 		if [[ ! -f "$script" ]]; then
 			mainwp_die "Command '$cmd' is not yet implemented."

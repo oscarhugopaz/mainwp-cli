@@ -5,6 +5,25 @@ All notable changes to `mainwp` are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0] - 2026-06-04
+
+### Added
+- `mainwp deps` subcommand for managing the optional runtime
+  dependencies (`gum` and `jq`):
+  - `deps status` (default) reports which dependencies are present or
+    missing, in human-readable or `--json` form.
+  - `deps install` detects the system package manager (`brew`, `apt`,
+    `dnf`, `pacman`, or `apk`) and offers to install the missing
+    packages. Honors `--no-input` by printing the command without
+    running it.
+- `mainwp init` now warns when `gum` or `jq` are missing and points
+  the user at `mainwp deps install` (or their package manager).
+  Installation itself is NOT performed by `init` - it belongs to the
+  package manager.
+- Homebrew formula now declares `gum` and `jq` as required (not
+  `:recommended`) dependencies, so `brew install mainwp` always
+  pulls them in.
+
 ## [0.1.0] - 2026-06-04
 
 ### Added

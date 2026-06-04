@@ -56,11 +56,10 @@ $ mainwp sites list
 
 - macOS or Linux
 - `bash` 3.2 or newer (the macOS system bash works)
-- [`gum`](https://github.com/charmbracelet/gum) (only required for
-  interactive prompts and styled output; falls back to plain text when
-  missing)
-- [`jq`](https://stedolan.github.io/jq/) (used internally for JSON
-  shaping; installed automatically by the Homebrew formula)
+- [`gum`](https://github.com/charmbracelet/gum) and
+  [`jq`](https://stedolan.github.io/jq/) — installed automatically by
+  the Homebrew formula. For manual installs, run
+  `mainwp deps install` (see below).
 - A MainWP Dashboard reachable over HTTPS with [REST API v2
   enabled](https://docs.mainwp.com/api-reference/rest-api/overview)
 
@@ -73,7 +72,8 @@ brew tap oscarhugopaz/mainwp-cli
 brew install mainwp
 ```
 
-To upgrade later:
+`brew install mainwp` brings in `gum` and `jq` automatically as required
+dependencies. To upgrade later:
 
 ```bash
 brew update
@@ -85,6 +85,7 @@ brew upgrade mainwp
 ```bash
 git clone https://github.com/oscarhugopaz/mainwp-cli.git
 cd mainwp-cli
+./bin/mainwp deps install    # installs gum and jq via your package manager
 sudo install -m 0755 bin/mainwp /usr/local/bin/mainwp
 ```
 
@@ -94,6 +95,9 @@ binary:
 ```bash
 ln -s "$(pwd)/bin/mainwp" /usr/local/bin/mainwp
 ```
+
+The `deps` subcommand detects your package manager (`brew`, `apt`,
+`dnf`, `pacman`, or `apk`) and runs the right install command.
 
 ## Quick start
 
@@ -172,6 +176,29 @@ After the subcommand, the same flags are accepted where it makes sense
 See [Configuration and profiles](#configuration-and-profiles). `init` is
 a guided walkthrough that prompts for the URL and key and verifies that
 `/sites/basic` returns 200.
+
+If `gum` or `jq` are missing, `init` prints a warning and the
+suggested install command, but does not run it — dependency
+installation belongs to your package manager (Homebrew on macOS,
+`apt`/`dnf`/`pacman`/`apk` on Linux). Use `mainwp deps install` to
+install them on demand.
+
+### `deps`
+
+Manage the optional runtime dependencies (`gum` and `jq`). The CLI is
+degraded without them (plain text instead of styled tables, raw JSON
+instead of pretty-printed), so installing them is recommended.
+
+```bash
+mainwp deps            # default: print status
+mainwp deps status     # list which deps are missing
+mainwp deps install    # detect package manager and offer to install
+```
+
+`deps install` detects your platform and package manager and runs the
+appropriate command (`brew install`, `apt-get install`, etc.). It
+prompts for confirmation in interactive mode and prints the command
+without running it in non-interactive mode.
 
 ### `sites`
 

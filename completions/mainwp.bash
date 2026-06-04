@@ -5,7 +5,7 @@ _mainwp_completions() {
   local cur prev words cword
   _init_completion || return
 
-  local commands="init config sites clients tags updates costs users settings monitoring api-keys posts pages batch completion help"
+  local commands="init deps config sites clients tags updates costs users settings monitoring api-keys posts pages batch completion help"
 
   if [[ ${cword} -eq 1 ]]; then
     if [[ ${cur} == -* ]]; then
@@ -53,6 +53,9 @@ _mainwp_completions() {
       ;;
     config)
       COMPREPLY=($(compgen -W "get set profile path" -- "${cur}"))
+      ;;
+    deps)
+      COMPREPLY=($(compgen -W "status install" -- "${cur}"))
       ;;
     completion)
       COMPREPLY=($(compgen -W "bash zsh" -- "${cur}"))

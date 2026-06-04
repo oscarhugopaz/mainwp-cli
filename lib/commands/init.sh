@@ -18,6 +18,11 @@ Options:
 Guided walkthrough that asks for the dashboard URL and an API key,
 stores them in your local config (~/.config/mainwp/config.json),
 and runs a quick connectivity check against /sites/basic.
+
+If gum or jq are missing, init prints a warning with the install
+command. Install them with \`mainwp deps install\` (or \`brew install
+gum jq\` on macOS) - the CLI works without them, just with a
+degraded experience.
 EOF
 }
 
@@ -48,6 +53,27 @@ cmd_init() {
 
 	MAINWP_PROFILE="$profile"
 	export MAINWP_PROFILE
+
+	# Warn about missing optional dependencies (gum, jq). The CLI still
+	# works without them; init does not install them because that is the
+	# package manager's job. Suggest `mainwp deps install` so the user
+	# has a one-liner ready to go.
+	local missing=()
+	local dep
+	while IFS= read -r dep; do
+		[[ -n "$dep" ]] && missing+=("$dep")
+	done < <(mainwp_deps_missing)
+	if [[ ${#missing[@]} -gt 0 ]]; then
+		mainwp_warn "Missing optional dependencies: ${missing[*]}"
+		local pm cmd
+		pm="$(mainwp_detect_package_manager)"
+		if [[ -n "$pm" ]]; then
+			cmd="$(mainwp_install_cmd_for "$pm" "${missing[@]}")"
+			mainwp_info "Install with: ${cmd}  (or: mainwp deps install)"
+		else
+			mainwp_info "Install manually for your platform, or run: mainwp deps install"
+		fi
+	fi
 
 	mainwp_info "Setting up profile '$profile'."
 
