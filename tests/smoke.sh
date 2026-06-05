@@ -10,6 +10,13 @@ set -uo pipefail
 ROOT="$(cd -P "$(dirname "$0")/.." && pwd)"
 BIN="$ROOT/bin/mainwp"
 
+# Sandbox HOME so config writes do not pollute the real user config.
+# Restored on exit. This makes the test suite safe to run against a
+# real MainWP Dashboard without risk of clobbering ~/.config/mainwp.
+TEST_HOME="$(mktemp -d)"
+trap 'rm -rf "$TEST_HOME"' EXIT
+export HOME="$TEST_HOME"
+
 PASS=0
 FAIL=0
 FAILED_TESTS=()

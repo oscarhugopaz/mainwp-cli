@@ -95,24 +95,29 @@ mainwp_config_api_path() {
 }
 
 # Set a value in the active profile, creating the profile if needed.
-# Usage: mainwp_config_set_field <jq-set-path> <value>
+# Usage: mainwp_config_set_field <field-path> <value>
+#
+# `field-path` is the path within the profile, e.g. `.url` or
+# `.api_key`. The function prepends `.profiles[$p]` so the value
+# always lands under the active profile, never at the document root.
 mainwp_config_set_field() {
 	local path="$1" value="$2"
-	local cfg
+	local cfg expr
 	cfg="$(mainwp_config_load)"
-	# Build the jq expression by concatenation rather than embedding it in a
-	# command substitution. The mix of "..." and '...' inside $(...) trips
-	# some bash parsers (and shellcheck SC1073). The $p inside the single
-	# quotes is intentional - it is consumed by jq, not bash.
-	# shellcheck disable=SC2016
-	local expr='.profiles[$p] //= {} | '"$path"
+	# `$p` and `$v` are jq variables bound via --arg below. The `\$p`
+	# and `\$v` here are escaped so bash leaves them alone for jq.
+	# `$path` IS bash-interpolated to e.g. `.url`.
+	expr=".profiles[\$p] //= {} | .profiles[\$p]$path = \$v"
 	cfg="$(printf '%s' "$cfg" | jq --arg p "$MAINWP_PROFILE" --arg v "$value" "$expr")"
 	mainwp_config_save "$cfg"
 }
 
-# Set the active profile name and persist it.
+# Set the active profile name in the on-disk config. Loads the current
+# config itself; any positional argument is ignored (kept for callers
+# that historically passed the loaded config in).
 mainwp_config_set_active() {
-	local cfg="$1"
+	local cfg
+	cfg="$(mainwp_config_load)"
 	cfg="$(printf '%s' "$cfg" | jq --arg p "$MAINWP_PROFILE" '.active = $p')"
 	mainwp_config_save "$cfg"
 }
