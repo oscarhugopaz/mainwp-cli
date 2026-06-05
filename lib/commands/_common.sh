@@ -93,10 +93,104 @@ if [[ -z "${_MAINWP_COMMON_LOADED:-}" ]]; then
 
 	# Render a JSON array returned by a list endpoint using the configured
 	# output mode. Arguments: array-json, header, jq-columns...
+	#
+	# As a polish, columns where every row evaluates to empty are
+	# dropped from both the header and the row content. So if the
+	# API does not return a `status` field for clients, the column
+	# simply does not show up in the table - the user does not have
+	# to know which fields are optional in the schema.
 	_mainwp_render_list() {
 		local json="$1" header="$2"
 		shift 2
-		mainwp_render_table "$header" "$@" <<<"$json"
+
+		# Split the header on commas.
+		local -a headers=()
+		IFS=',' read -ra headers <<<"$header"
+		local -a jqs=("$@")
+		local col_count=${#headers[@]}
+
+		# Walk every row once, collecting each column's value. We
+		# also flag columns that have at least one non-empty value
+		# so we can drop the ones that don't.
+		local -a col_has_data=()
+		local i
+		i=0
+		while [[ $i -lt $col_count ]]; do
+			col_has_data+=(0)
+			i=$((i + 1))
+		done
+
+		# Store each row's values as a unit-separated string so we
+		# can split it again later without juggling parallel arrays.
+		local -a rows=()
+		local row
+		while IFS= read -r row; do
+			local -a values=()
+			i=0
+			while [[ $i -lt $col_count ]]; do
+				values+=("$(printf '%s' "$row" | jq -r \
+					"${jqs[$i]} | if type==\"array\" then join(\", \") else . end // empty" \
+					2>/dev/null)")
+				i=$((i + 1))
+			done
+			rows+=("$(
+				IFS=$'\x1f'
+				echo "${values[*]}"
+			)")
+		done < <(printf '%s' "$json" | jq -c '.[]' 2>/dev/null)
+
+		for row in "${rows[@]}"; do
+			# Use `read -d` to preserve trailing empty fields - a plain
+			# `IFS=... read -ra` drops the last element when the input
+			# ends in the delimiter, which is exactly the case when
+			# the last column is empty (e.g. clients with no status).
+			local -a vals=()
+			local val
+			while IFS= read -r -d $'\x1f' val; do
+				vals+=("$val")
+			done < <(printf '%s\x1f' "$row")
+			i=0
+			while [[ $i -lt $col_count ]]; do
+				local cell="${vals[$i]:-}"
+				if [[ -n "$cell" && "${col_has_data[$i]}" -eq 0 ]]; then
+					# shellcheck disable=SC2004  # index, not arithmetic
+					col_has_data[$i]=1
+				fi
+				i=$((i + 1))
+			done
+		done
+
+		# Build the filtered header and the matching jq path list.
+		local new_header=""
+		local -a new_jqs=()
+		i=0
+		while [[ $i -lt $col_count ]]; do
+			if [[ "${col_has_data[$i]}" -eq 1 ]]; then
+				if [[ -z "$new_header" ]]; then
+					new_header="${headers[$i]}"
+				else
+					new_header="${new_header},${headers[$i]}"
+				fi
+				new_jqs+=("${jqs[$i]}")
+			fi
+			i=$((i + 1))
+		done
+
+		# If every column was empty, there is nothing to show. Do
+		# not silently drop the user into the JSON object view -
+		# they asked for a list, so just print nothing and let the
+		# caller fall back to mainwp_render_object if it cares.
+		if [[ -z "$new_header" ]]; then
+			return 0
+		fi
+
+		# Pass the *original* JSON through, with the filtered header
+		# and the matching subset of jq paths. mainwp_render_table
+		# iterates the array and runs each remaining jq path against
+		# the row's full object, so we do not need to reshape the
+		# JSON itself - we just need to drop the empty columns
+		# from the spec we hand to the renderer.
+		mainwp_render_table "$new_header" "${new_jqs[@]}" <<<"$json"
 	}
 
 	# Coerce any of the three shapes MainWP endpoints can return into
