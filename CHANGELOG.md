@@ -21,7 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Installation itself is NOT performed by `init` - it belongs to the
   package manager.
 - Homebrew formula now declares `gum` and `jq` as required (not
-  `:recommended`) dependencies, so `brew install mainwp` always
+  `:recommended`) dependencies, so `brew install mainwp-cli` always
   pulls them in.
 
 ## [0.1.0] - 2026-06-04

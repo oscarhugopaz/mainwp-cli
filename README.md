@@ -81,7 +81,7 @@ dependencies. To upgrade later:
 
 ```bash
 brew update
-brew upgrade mainwp
+brew upgrade mainwp-cli
 ```
 
 ### Manual install
@@ -598,7 +598,7 @@ What the script does, in order:
    and computes its SHA256, retrying up to 10 times because the
    tarball can take a few seconds to become available after the tag
    is pushed.
-6. Rewrites `url` and `sha256` in `homebrew-mainwp-cli/Formula/mainwp.rb`
+6. Rewrites `url` and `sha256` in `homebrew-mainwp-cli/Formula/mainwp-cli.rb`
    to point at the new release.
 7. Commits the formula change and pushes to the tap.
 
@@ -644,7 +644,7 @@ bumps the patch number:
 - The release is visible at
   <https://github.com/oscarhugopaz/mainwp-cli/releases/tag/v0.3.0>
 - Anyone with the tap installed can now run
-  `brew update && brew upgrade mainwp` to get the new version.
+  `brew update && brew upgrade mainwp-cli` to get the new version.
 - The CI workflow in `homebrew-mainwp-cli` re-runs `brew audit` and
   `brew test` against the new formula to make sure it installs.
 

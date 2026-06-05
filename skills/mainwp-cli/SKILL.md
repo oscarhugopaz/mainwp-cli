@@ -238,7 +238,7 @@ In scripts, check `$?` after each call. To debug, re-run with `--json` to see th
 | `Network error contacting ... : curl: (22) The requested URL returned error: 400`        | A `--key=value` filter was passed to a GET endpoint that does not accept a body; the CLI now passes filters as query args (since 0.3.3), but custom jq-based or curl-direct invocations can still hit this. |
 | `Network error contacting ... : curl: (22) The requested URL returned error: 500`        | A server-side failure. The body usually contains `{"code":"...","message":"..."}`. Read with `--json` to inspect. |
 | `✗ Unknown sites subcommand: '12'`                                                      | You forgot to pass the subcommand. Use `mainwp sites get 12`, not `mainwp sites 12`.                     |
-| `✗ Command 'api-keys' has no entry point.`                                              | Bug fixed in 0.3.2. If you still see it, the user is on a stale install - run `brew update && brew upgrade mainwp`. |
+| `✗ Command 'api-keys' has no entry point.`                                              | Bug fixed in 0.3.2. If you still see it, the user is on a stale install - run `brew update && brew upgrade mainwp-cli`. |
 | `No dashboard URL configured for profile 'X'. Run: mainwp init`                          | No profile, no env vars, no flag. Either run `mainwp init` or pass `MAINWP_URL` + `MAINWP_API_KEY`.         |
 | `column: line too long`                                                                 | Bug fixed in 0.3.4 (gum + long-value collision). Re-run with `--plain` if you see it.                       |
 

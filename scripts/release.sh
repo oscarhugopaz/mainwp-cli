@@ -255,7 +255,7 @@ if [[ "$RUN_BREW_TEST" == true ]]; then
 		cd "$TAP_DIR"
 		brew install --build-from-source ./Formula/mainwp-cli.rb
 		brew test ./Formula/mainwp-cli.rb
-		brew uninstall mainwp
+		brew uninstall mainwp-cli
 	)
 fi
 
@@ -264,7 +264,7 @@ fi
 if [[ -n "$(git -C "$TAP_DIR" status --short)" ]]; then
 	info "Committing tap update"
 	git -C "$TAP_DIR" add Formula/mainwp-cli.rb
-	git -C "$TAP_DIR" commit -m "mainwp $VERSION"
+	git -C "$TAP_DIR" commit -m "mainwp-cli $VERSION"
 	git -C "$TAP_DIR" push origin main
 else
 	info "Tap formula already up to date"
