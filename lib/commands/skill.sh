@@ -103,6 +103,8 @@ Subcommands:
 
 Install options:
   --all                     Install into every supported agent.
+  --global                  Install only into the shared ~/.agents/skills/
+                            location (shortcut for --agent global).
   --agent NAME              Install into one agent (repeatable).
   -h, --help                Show this help.
 
@@ -157,6 +159,13 @@ cmd_skill_install() {
 		case "$1" in
 		--all)
 			all=true
+			shift
+			;;
+		--global)
+			# Shortcut for `--agent global`. Saves the user from
+			# remembering the exact agent name when all they want
+			# is the shared ~/.agents/skills/ install.
+			agents+=("global")
 			shift
 			;;
 		--agent)
