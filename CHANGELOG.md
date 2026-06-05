@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to `mainwp` are documented in this file.
+All notable changes to `mainwp-cli` are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
@@ -30,7 +30,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Initial release.
 - `mainwp init` guided setup with gum prompts and a connectivity check
   against `/sites/basic`.
-- Profile-based configuration stored in `~/.config/mainwp/config.json`
+- Profile-based configuration stored in `~/.config/mainwp-cli/config.json`
   with `0600` permissions. Supports `default`, custom profiles, and
   `MAINWP_URL`/`MAINWP_API_KEY` env overrides.
 - Commands covering every documented v2 endpoint:

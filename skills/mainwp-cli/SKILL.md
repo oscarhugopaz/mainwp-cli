@@ -37,7 +37,7 @@ The user is expected to install the CLI themselves. The agent should not run `br
 - macOS / Homebrew (preferred):
   ```bash
   brew tap oscarhugopaz/mainwp-cli
-  brew install mainwp
+  brew install mainwp-cli
   ```
 - Linux or manual: see <https://github.com/oscarhugopaz/mainwp-cli#install>.
 
@@ -63,7 +63,7 @@ If the result is `{}`, the user has no profile yet. Run the guided setup:
 mainwp init
 ```
 
-It asks for the dashboard URL (e.g. `https://dashboard.example.com`) and a Bearer API key, stores them in `~/.config/mainwp/config.json` with `0600` permissions, and verifies connectivity with `GET /sites/basic`. If the connectivity check fails, the most common reasons are:
+It asks for the dashboard URL (e.g. `https://dashboard.example.com`) and a Bearer API key, stores them in `~/.config/mainwp-cli/config.json` with `0600` permissions, and verifies connectivity with `GET /sites/basic`. If the connectivity check fails, the most common reasons are:
 
 - the URL is missing the scheme (must be `https://...`)
 - the key has been revoked or does not have the right permissions
@@ -246,7 +246,7 @@ In scripts, check `$?` after each call. To debug, re-run with `--json` to see th
 
 - **Single binary at `bin/mainwp`.** No Python, no Node, no compiled extensions.
 - **Subcommands are one-file-per-feature** under `lib/commands/`. The dispatch is in `bin/mainwp:mainwp_dispatch`.
-- **Profiles are JSON** in `~/.config/mainwp/config.json` (chmod `0600`).
+- **Profiles are JSON** in `~/.config/mainwp-cli/config.json` (chmod `0600`).
 - **HTTP client is curl** with the Bearer token in `Authorization`. No SDK.
 - **Bash 3.2 compatible** (the macOS system bash). The "printf + eval" trick is used to share global arrays between functions because `declare -g` does not exist in 3.2.
 - **Three output paths** share the same data: gum (TTY), plain, and JSON. The list renderer drops empty columns automatically.

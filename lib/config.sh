@@ -1,13 +1,16 @@
 # shellcheck shell=bash
 # config.sh - Configuration and profile management for the mainwp CLI
-# Stores settings as JSON in $XDG_CONFIG_HOME/mainwp/config.json (falling
-# back to ~/.config/mainwp/config.json). The file is chmod 600 because it
-# contains API keys.
+# Stores settings as JSON in $XDG_CONFIG_HOME/mainwp-cli/config.json
+# (falling back to ~/.config/mainwp-cli/config.json). The file is
+# chmod 600 because it contains API keys.
+#
+# The directory name matches the Homebrew formula name (mainwp-cli)
+# so that the config lives next to the package that owns it.
 
 # Locate the config file path, honouring XDG Base Directory.
 mainwp_config_path() {
 	local base="${XDG_CONFIG_HOME:-$HOME/.config}"
-	printf '%s/mainwp/config.json' "$base"
+	printf '%s/mainwp-cli/config.json' "$base"
 }
 
 # Locate the config directory, creating it if missing.

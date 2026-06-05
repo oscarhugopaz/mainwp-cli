@@ -16,7 +16,7 @@ Options:
   --profile N   Save the credentials under profile N (default: "default")
 
 Guided walkthrough that asks for the dashboard URL and an API key,
-stores them in your local config (~/.config/mainwp/config.json),
+stores them in your local config (~/.config/mainwp-cli/config.json),
 and runs a quick connectivity check against /sites/basic.
 
 If gum or jq are missing, init prints a warning with the install

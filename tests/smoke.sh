@@ -95,7 +95,7 @@ run_capture "unknown subcommand on sites" 1 sites no-such >/dev/null
 
 printf '\n[4] config subcommands work without a real profile\n'
 out="$(run_capture "config path" 0 config path)"
-assert_contains "config path output" "$out" "mainwp/config.json"
+assert_contains "config path output" "$out" "mainwp-cli/config.json"
 
 out="$(run_capture "config profile list empty" 0 config profile list)"
 assert_contains "no profiles message" "$out" "No profiles configured yet"

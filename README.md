@@ -73,10 +73,10 @@ $ mainwp sites list
 
 ```bash
 brew tap oscarhugopaz/mainwp-cli
-brew install mainwp
+brew install mainwp-cli
 ```
 
-`brew install mainwp` brings in `gum` and `jq` automatically as required
+`brew install mainwp-cli` brings in `gum` and `jq` automatically as required
 dependencies. To upgrade later:
 
 ```bash
@@ -124,7 +124,7 @@ mainwp updates run-all
 
 ## Configuration and profiles
 
-Credentials are stored in `~/.config/mainwp/config.json` with `0600`
+Credentials are stored in `~/.config/mainwp-cli/config.json` with `0600`
 permissions. The file is a tiny JSON document keyed by profile name:
 
 ```json
@@ -651,7 +651,7 @@ bumps the patch number:
 ## Related projects
 
 - [homebrew-mainwp-cli](https://github.com/oscarhugopaz/homebrew-mainwp-cli) -
-  the Homebrew tap used by `brew install mainwp`.
+  the Homebrew tap used by `brew install mainwp-cli`.
 - [MainWP REST API v2 docs](https://docs.mainwp.com/api-reference/rest-api/overview)
 - [MainWP Postman collection](https://www.postman.com/mainwp/mainwp/collection/ujfddk4/mainwp-rest-api-v2-current)
 
