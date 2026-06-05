@@ -7,6 +7,7 @@ _mainwp() {
   commands=(
     'init:Interactive setup (URL + API key)'
     'deps:Check or install optional dependencies'
+    'skill:Install the mainwp-cli skill into AI agents'
     'config:Manage configuration and profiles'
     'sites:Manage child sites'
     'clients:Manage clients'
@@ -79,6 +80,9 @@ _mainwp() {
           ;;
         deps)
           _values 'subcommand' status install
+          ;;
+        skill)
+          _values 'subcommand' install
           ;;
       esac
       ;;

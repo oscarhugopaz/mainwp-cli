@@ -77,7 +77,7 @@ assert_contains "help lists config" "$out" "config"
 assert_contains "help lists init"   "$out" "init"
 
 printf '\n[2] help for subcommands\n'
-for cmd in init deps config sites clients tags updates costs users settings monitoring api-keys posts pages batch; do
+for cmd in init deps skill config sites clients tags updates costs users settings monitoring api-keys posts pages batch; do
   out="$(run_capture "help $cmd" 0 help "$cmd")"
   assert_contains "help $cmd is non-empty" "$out" "$cmd -"
 done
@@ -106,6 +106,56 @@ out="$(run_capture "deps status json" 0 deps --json status)"
 assert_contains "deps JSON output" "$out" '"present"'
 out="$(run_capture "deps help" 0 help deps)"
 assert_contains "deps help lists status" "$out" "status"
+
+printf '\n[5c] skill subcommand\n'
+out="$(run_capture "skill help" 0 help skill)"
+assert_contains "skill help lists install" "$out" "install"
+assert_contains "skill help lists all agents" "$out" "claude-code"
+assert_contains "skill help lists global" "$out" "global"
+out="$(run_capture "skill install --help" 0 skill install --help)"
+assert_contains "skill install help" "$out" "--agent"
+
+# Real install into a sandboxed HOME so the test is hermetic.
+SKILL_SANDBOX="$(mktemp -d)"
+HOME="$SKILL_SANDBOX" "$BIN" skill install --all --no-input >/dev/null 2>&1
+for agent in claude-code codex pi opencode global; do
+  case "$agent" in
+    claude-code) root="$SKILL_SANDBOX/.claude/skills" ;;
+    codex)       root="$SKILL_SANDBOX/.codex/skills" ;;
+    pi)          root="$SKILL_SANDBOX/.pi/skills" ;;
+    opencode)    root="$SKILL_SANDBOX/.config/opencode/skills" ;;
+    global)      root="$SKILL_SANDBOX/.agents/skills" ;;
+  esac
+  if [[ -f "$root/mainwp-cli/SKILL.md" ]]; then
+    printf '  \033[32m✓\033[0m installed for %s\n' "$agent"
+    PASS=$((PASS+1))
+  else
+    printf '  \033[31m✗\033[0m missing SKILL.md for %s\n' "$agent"
+    FAIL=$((FAIL+1))
+    FAILED_TESTS+=("skill install for $agent")
+  fi
+done
+rm -rf "$SKILL_SANDBOX"
+
+# --agent filters down to one location.
+SKILL_SANDBOX="$(mktemp -d)"
+HOME="$SKILL_SANDBOX" "$BIN" skill install --agent opencode --no-input >/dev/null 2>&1
+if [[ -f "$SKILL_SANDBOX/.config/opencode/skills/mainwp-cli/SKILL.md" \
+   && ! -d "$SKILL_SANDBOX/.agents/skills/mainwp-cli" ]]; then
+  printf '  \033[32m✓\033[0m --agent installs only the requested agent\n'
+  PASS=$((PASS+1))
+else
+  printf '  \033[31m✗\033[0m --agent did not filter correctly\n'
+  FAIL=$((FAIL+1))
+  FAILED_TESTS+=("--agent filter")
+fi
+rm -rf "$SKILL_SANDBOX"
+
+# --no-input without --agent/--all must fail.
+run_capture "skill install --no-input" 1 skill install --no-input >/dev/null
+
+# Unknown agent must fail.
+run_capture "skill install unknown agent" 1 skill install --agent bogus --no-input >/dev/null
 
 printf '\n[6] errors point to mainwp init when no profile is set\n'
 out="$(run_capture "sites list without config" 1 sites list --no-input)"

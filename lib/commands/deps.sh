@@ -28,7 +28,10 @@ EOF
 }
 
 cmd_deps() {
-	_mainwp_parse_common_flags "$@" >/dev/null
+	# The printf+eval pattern is required: the helper outputs assignment
+	# text to stdout, and the caller evals it so REMAINING is set in
+	# this scope (bash 3.2 has no `declare -g`).
+	eval "$(_mainwp_parse_common_flags "$@")" >/dev/null
 	if [[ ${#REMAINING[@]} -gt 0 ]]; then
 		set -- "${REMAINING[@]}"
 	else

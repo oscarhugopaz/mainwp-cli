@@ -34,6 +34,8 @@ $ mainwp sites list
 - [Global options](#global-options)
 - [Commands](#commands)
   - [`init` and `config`](#init-and-config)
+  - [`deps`](#deps)
+  - [`skill`](#skill)
   - [`sites`](#sites)
   - [`clients`](#clients)
   - [`tags`](#tags)
@@ -201,6 +203,41 @@ mainwp deps install    # detect package manager and offer to install
 appropriate command (`brew install`, `apt-get install`, etc.). It
 prompts for confirmation in interactive mode and prints the command
 without running it in non-interactive mode.
+
+### `skill`
+
+Install the mainwp-cli skill (a `SKILL.md` plus any helper files under
+`skills/mainwp-cli/` in the repo) into one or more AI agents' skills
+directory. Useful for tools like Claude Code, Codex, opencode, and
+similar agents that auto-load skills from a known path.
+
+```bash
+mainwp skill install              # interactive multi-select
+mainwp skill install --all        # install in every supported agent
+mainwp skill install --agent opencode
+mainwp skill install --agent claude-code --agent codex
+```
+
+Supported agents and their install paths:
+
+| Agent        | Skill path                                |
+| ------------ | ----------------------------------------- |
+| `claude-code`| `~/.claude/skills/mainwp-cli/`            |
+| `codex`      | `~/.codex/skills/mainwp-cli/`             |
+| `pi`         | `~/.pi/skills/mainwp-cli/`                |
+| `opencode`   | `~/.config/opencode/skills/mainwp-cli/`   |
+| `global`     | `~/.agents/skills/mainwp-cli/`            |
+
+In interactive mode, `gum choose --no-limit` lets you toggle multiple
+agents with `space` and confirm with `enter`. Selecting `all` expands
+to every entry above. Without `gum`, a plain `read` prompt accepts a
+comma-separated list. In `--no-input` mode, `--agent NAME` (repeatable)
+or `--all` is required.
+
+The skill is overwritten in place on each install (no diffing, no
+versioning). The source lives in `skills/mainwp-cli/` in the repo
+(next to `bin/mainwp`), so the Homebrew install ships it too — no
+separate download step.
 
 ### `sites`
 
@@ -512,12 +549,13 @@ lib/                       shared libraries
   ui.sh                    gum-based interactive prompts
   commands/                one file per subcommand
     _common.sh             shared helpers (parsing, kv flag collection)
-    init.sh, config.sh
+    init.sh, config.sh, deps.sh, skill.sh
     sites.sh, clients.sh, tags.sh, updates.sh, costs.sh
     users.sh, settings.sh, monitoring.sh, api-keys.sh
     posts.sh, pages.sh, batch.sh
     completion.sh
 completions/               static bash + zsh completion scripts
+skills/mainwp-cli/          SKILL.md bundle for AI agents
 tests/                     smoke tests (run with: ./tests/smoke.sh)
 scripts/                   release automation
 ```

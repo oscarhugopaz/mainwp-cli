@@ -72,6 +72,7 @@ Global Options:
 Commands:
   init                 Interactive setup (URL + API key)
   deps                 Check or install optional dependencies
+  skill                Install the mainwp-cli skill into AI agents
   config               Manage configuration and profiles
   sites                Manage child sites
   clients              Manage clients
@@ -98,7 +99,7 @@ EOF
 mainwp_command_help() {
 	local cmd="$1"
 	case "$cmd" in
-	help | init | deps | config | sites | clients | tags | updates | costs | users | settings | monitoring | api-keys | posts | pages | batch)
+	help | init | deps | skill | config | sites | clients | tags | updates | costs | users | settings | monitoring | api-keys | posts | pages | batch)
 		# Source the file if it isn't loaded yet, then call the helper.
 		local script="$MAINWP_ROOT/lib/commands/${cmd}.sh"
 		if [[ -f "$script" ]]; then
@@ -213,7 +214,7 @@ mainwp_dispatch() {
 		. "$MAINWP_ROOT/lib/commands/completion.sh"
 		cmd_completion "${MAINWP_ARGS[@]}"
 		;;
-	init | deps | config | sites | clients | tags | updates | costs | users | settings | monitoring | api-keys | posts | pages | batch)
+	init | deps | skill | config | sites | clients | tags | updates | costs | users | settings | monitoring | api-keys | posts | pages | batch)
 		local script="$MAINWP_ROOT/lib/commands/${cmd}.sh"
 		if [[ ! -f "$script" ]]; then
 			mainwp_die "Command '$cmd' is not yet implemented."
