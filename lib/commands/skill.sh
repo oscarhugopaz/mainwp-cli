@@ -24,7 +24,7 @@
 MAINWP_SKILL_AGENTS=(
 	"claude-code:$HOME/.claude/skills"
 	"codex:$HOME/.codex/skills"
-	"pi:$HOME/.pi/skills"
+	"pi:$HOME/.pi/agent/skills"
 	"opencode:$HOME/.config/opencode/skills"
 	"global:$HOME/.agents/skills"
 )
@@ -34,7 +34,7 @@ MAINWP_SKILL_AGENTS=(
 MAINWP_SKILL_LABELS=(
 	"claude-code  (~/.claude/skills)"
 	"codex        (~/.codex/skills)"
-	"pi           (~/.pi/skills)"
+	"pi           (~/.pi/agent/skills)"
 	"opencode     (~/.config/opencode/skills)"
 	"global       (~/.agents/skills)"
 	"all          (every agent above)"

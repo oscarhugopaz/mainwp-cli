@@ -224,7 +224,7 @@ Supported agents and their install paths:
 | ------------ | ----------------------------------------- |
 | `claude-code`| `~/.claude/skills/mainwp-cli/`            |
 | `codex`      | `~/.codex/skills/mainwp-cli/`             |
-| `pi`         | `~/.pi/skills/mainwp-cli/`                |
+| `pi`         | `~/.pi/agent/skills/mainwp-cli/`          |
 | `opencode`   | `~/.config/opencode/skills/mainwp-cli/`   |
 | `global`     | `~/.agents/skills/mainwp-cli/`            |
 

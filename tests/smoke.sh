@@ -122,7 +122,7 @@ for agent in claude-code codex pi opencode global; do
   case "$agent" in
     claude-code) root="$SKILL_SANDBOX/.claude/skills" ;;
     codex)       root="$SKILL_SANDBOX/.codex/skills" ;;
-    pi)          root="$SKILL_SANDBOX/.pi/skills" ;;
+    pi)          root="$SKILL_SANDBOX/.pi/agent/skills" ;;
     opencode)    root="$SKILL_SANDBOX/.config/opencode/skills" ;;
     global)      root="$SKILL_SANDBOX/.agents/skills" ;;
   esac
