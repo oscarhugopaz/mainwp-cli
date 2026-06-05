@@ -122,6 +122,7 @@ mainwp_api() {
 # as query-string pairs. `mainwp_api_post/put/patch` keep the original
 # signature where the first positional after path is the JSON body.
 mainwp_api_get() { mainwp_api GET "$1" "" "${@:2}"; }
+# shellcheck disable=SC2329  # kept for symmetry with mainwp_api_get; called from command files
 mainwp_api_delete() { mainwp_api DELETE "$1" "" "${@:2}"; }
 mainwp_api_post() { mainwp_api POST "$@"; }
 mainwp_api_put() { mainwp_api PUT "$@"; }
