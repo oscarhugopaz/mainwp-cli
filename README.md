@@ -214,6 +214,7 @@ similar agents that auto-load skills from a known path.
 ```bash
 mainwp skill install              # interactive multi-select
 mainwp skill install --all        # install in every supported agent
+mainwp skill install --global     # install only in ~/.agents/skills/
 mainwp skill install --agent opencode
 mainwp skill install --agent claude-code --agent codex
 ```
@@ -227,6 +228,10 @@ Supported agents and their install paths:
 | `pi`         | `~/.pi/agent/skills/mainwp-cli/`          |
 | `opencode`   | `~/.config/opencode/skills/mainwp-cli/`   |
 | `global`     | `~/.agents/skills/mainwp-cli/`            |
+
+`--global` is exclusive: when present, it installs only into
+`~/.agents/skills/mainwp-cli/`, even if combined accidentally with `--all`
+or `--agent`.
 
 In interactive mode, `gum choose --no-limit` lets you toggle multiple
 agents with `space` and confirm with `enter`. Selecting `all` expands

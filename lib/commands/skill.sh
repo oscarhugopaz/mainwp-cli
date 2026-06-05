@@ -104,7 +104,7 @@ Subcommands:
 Install options:
   --all                     Install into every supported agent.
   --global                  Install only into the shared ~/.agents/skills/
-                            location (shortcut for --agent global).
+                            location (overrides --all/--agent).
   --agent NAME              Install into one agent (repeatable).
   -h, --help                Show this help.
 
@@ -153,6 +153,7 @@ cmd_skill() {
 cmd_skill_install() {
 	local selected=()
 	local all=false
+	local global_only=false
 	local agents=()
 
 	while [[ $# -gt 0 ]]; do
@@ -162,9 +163,9 @@ cmd_skill_install() {
 			shift
 			;;
 		--global)
-			# Shortcut for `--agent global`. Saves the user from
-			# remembering the exact agent name when all they want
-			# is the shared ~/.agents/skills/ install.
+			# Force the shared ~/.agents/skills/ install, even if the
+			# flag is combined accidentally with broader selectors.
+			global_only=true
 			agents+=("global")
 			shift
 			;;
@@ -185,7 +186,9 @@ cmd_skill_install() {
 
 	# ---- pick agents -------------------------------------------
 
-	if [[ "$all" == true ]]; then
+	if [[ "$global_only" == true ]]; then
+		selected=("global")
+	elif [[ "$all" == true ]]; then
 		local entry name
 		for entry in "${MAINWP_SKILL_AGENTS[@]}"; do
 			name="${entry%%:*}"

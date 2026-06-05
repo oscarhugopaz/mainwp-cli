@@ -158,6 +158,33 @@ else
 fi
 rm -rf "$SKILL_SANDBOX"
 
+# --global is exclusive and must not remove unrelated skills.
+SKILL_SANDBOX="$(mktemp -d)"
+mkdir -p "$SKILL_SANDBOX/.claude/skills/other-skill" \
+         "$SKILL_SANDBOX/.codex/skills/other-skill" \
+         "$SKILL_SANDBOX/.pi/agent/skills/other-skill" \
+         "$SKILL_SANDBOX/.config/opencode/skills/other-skill" \
+         "$SKILL_SANDBOX/.agents/skills/other-skill"
+HOME="$SKILL_SANDBOX" "$BIN" skill install --global --all --no-input >/dev/null 2>&1
+if [[ -f "$SKILL_SANDBOX/.agents/skills/mainwp-cli/SKILL.md" \
+   && -d "$SKILL_SANDBOX/.agents/skills/other-skill" \
+   && -d "$SKILL_SANDBOX/.claude/skills/other-skill" \
+   && -d "$SKILL_SANDBOX/.codex/skills/other-skill" \
+   && -d "$SKILL_SANDBOX/.pi/agent/skills/other-skill" \
+   && -d "$SKILL_SANDBOX/.config/opencode/skills/other-skill" \
+   && ! -d "$SKILL_SANDBOX/.claude/skills/mainwp-cli" \
+   && ! -d "$SKILL_SANDBOX/.codex/skills/mainwp-cli" \
+   && ! -d "$SKILL_SANDBOX/.pi/agent/skills/mainwp-cli" \
+   && ! -d "$SKILL_SANDBOX/.config/opencode/skills/mainwp-cli" ]]; then
+  printf '  \033[32m✓\033[0m --global installs only shared skill and preserves existing skills\n'
+  PASS=$((PASS+1))
+else
+  printf '  \033[31m✗\033[0m --global touched non-global skill locations\n'
+  FAIL=$((FAIL+1))
+  FAILED_TESTS+=("--global exclusive install")
+fi
+rm -rf "$SKILL_SANDBOX"
+
 # --no-input without --agent/--all must fail.
 run_capture "skill install --no-input" 1 skill install --no-input >/dev/null
 
