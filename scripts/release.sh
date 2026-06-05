@@ -13,8 +13,8 @@
 #   6. Commit and push the tap update
 #
 # Options:
-#   --tap-dir PATH    Path to homebrew-mainwp-cli
-#                    (default: ../homebrew-mainwp-cli)
+#   --tap-dir PATH    Path to homebrew-tap
+#                    (default: ../homebrew-tap)
 #   --brew-test      Run brew install/test/uninstall against the new
 #                    formula before pushing the tap update
 #   --yes, -y        Skip the confirmation prompt
@@ -33,8 +33,8 @@ Example:
   ./scripts/release.sh           # auto-increment patch from bin/mainwp
 
 Options:
-  --tap-dir PATH    Path to homebrew-mainwp-cli
-                    (default: ../homebrew-mainwp-cli)
+  --tap-dir PATH    Path to homebrew-tap
+                    (default: ../homebrew-tap)
   --brew-test       Run brew install/test/uninstall against the new
                     formula before pushing the tap update
   --yes, -y         Skip the confirmation prompt
@@ -149,7 +149,7 @@ fi
 
 VERSION="${VERSION#v}"
 TAG="v$VERSION"
-TAP_DIR="${TAP_DIR:-$REPO_ROOT/../homebrew-mainwp-cli}"
+TAP_DIR="${TAP_DIR:-$REPO_ROOT/../homebrew-tap}"
 
 # ---- preflight checks ----------------------------------------------
 
@@ -167,7 +167,7 @@ TAP_BRANCH=$(git -C "$TAP_DIR" branch --show-current)
 [[ "$TAP_BRANCH" == "main" ]] || die "Tap repo must be on main (current branch: $TAP_BRANCH)."
 
 require_clean_repo "$REPO_ROOT" "mainwp-cli"
-require_clean_repo "$TAP_DIR" "homebrew-mainwp-cli"
+require_clean_repo "$TAP_DIR" "homebrew-tap"
 
 info "Fetching tags from origin"
 git fetch origin --tags

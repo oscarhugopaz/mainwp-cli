@@ -72,8 +72,7 @@ $ mainwp sites list
 ### Homebrew (recommended)
 
 ```bash
-brew tap oscarhugopaz/mainwp-cli
-brew install mainwp-cli
+brew install oscarhugopaz/tap/mainwp-cli
 ```
 
 `brew install mainwp-cli` brings in `gum` and `jq` automatically as required
@@ -577,7 +576,7 @@ Releases are cut with `scripts/release.sh`, which automates the whole
 ### Prerequisites
 
 - A clean working tree on `main` in both `mainwp-cli` and
-  `homebrew-mainwp-cli` (the script checks and refuses otherwise)
+  `homebrew-tap` (the script checks and refuses otherwise)
 - `git`, `curl`, `shasum`, `shellcheck`, and `shfmt` on `$PATH`
 - The tap checked out as a sibling of `mainwp-cli` (default), or
   pointed at with `--tap-dir PATH`
@@ -603,7 +602,7 @@ What the script does, in order:
    and computes its SHA256, retrying up to 10 times because the
    tarball can take a few seconds to become available after the tag
    is pushed.
-6. Rewrites `url` and `sha256` in `homebrew-mainwp-cli/Formula/mainwp-cli.rb`
+6. Rewrites `url` and `sha256` in `homebrew-tap/Formula/mainwp-cli.rb`
    to point at the new release.
 7. Commits the formula change and pushes to the tap.
 
@@ -625,7 +624,7 @@ bumps the patch number:
 
 | Flag            | Effect                                                                                    |
 | --------------- | ----------------------------------------------------------------------------------------- |
-| `--tap-dir PATH`| Location of the tap repo. Default: `../homebrew-mainwp-cli`.                              |
+| `--tap-dir PATH`| Location of the tap repo. Default: `../homebrew-tap`.                                     |
 | `--brew-test`   | After updating the formula, run `brew install --build-from-source`, `brew test`, and `brew uninstall` against it before pushing. Catches formula regressions locally. |
 | `--skip-tests`  | Skip the shellcheck/shfmt/smoke step. Use when iterating on the script itself.            |
 | `--yes`, `-y`   | Skip the confirmation prompt before pushing.                                             |
@@ -641,7 +640,7 @@ bumps the patch number:
 ./scripts/release.sh 0.3.0 --yes
 
 # Cut 0.3.0 with the tap in a non-default location
-./scripts/release.sh 0.3.0 --tap-dir ~/work/homebrew-mainwp-cli
+./scripts/release.sh 0.3.0 --tap-dir ~/work/homebrew-tap
 ```
 
 ### What happens after the script finishes
@@ -650,13 +649,13 @@ bumps the patch number:
   <https://github.com/oscarhugopaz/mainwp-cli/releases/tag/v0.3.0>
 - Anyone with the tap installed can now run
   `brew update && brew upgrade mainwp-cli` to get the new version.
-- The CI workflow in `homebrew-mainwp-cli` re-runs `brew audit` and
+- The CI workflow in `homebrew-tap` re-runs `brew audit` and
   `brew test` against the new formula to make sure it installs.
 
 ## Related projects
 
-- [homebrew-mainwp-cli](https://github.com/oscarhugopaz/homebrew-mainwp-cli) -
-  the Homebrew tap used by `brew install mainwp-cli`.
+- [homebrew-tap](https://github.com/oscarhugopaz/homebrew-tap) -
+  the Homebrew tap used by `brew install oscarhugopaz/tap/mainwp-cli`.
 - [MainWP REST API v2 docs](https://docs.mainwp.com/api-reference/rest-api/overview)
 - [MainWP Postman collection](https://www.postman.com/mainwp/mainwp/collection/ujfddk4/mainwp-rest-api-v2-current)
 

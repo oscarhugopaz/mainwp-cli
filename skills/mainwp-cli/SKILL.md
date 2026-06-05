@@ -36,8 +36,7 @@ The user is expected to install the CLI themselves. The agent should not run `br
 
 - macOS / Homebrew (preferred):
   ```bash
-  brew tap oscarhugopaz/mainwp-cli
-  brew install mainwp-cli
+  brew install oscarhugopaz/tap/mainwp-cli
   ```
 - Linux or manual: see <https://github.com/oscarhugopaz/mainwp-cli#install>.
 
