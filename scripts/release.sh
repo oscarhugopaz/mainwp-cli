@@ -9,7 +9,7 @@
 #   2. Run shellcheck, shfmt, and the smoke tests
 #   3. Commit "Release <version>", push main, tag v<version>, push the tag
 #   4. Download the release tarball from GitHub and compute its sha256
-#   5. Rewrite url/sha256 in the tap's Formula/mainwp.rb
+#   5. Rewrite url/sha256 in the tap's Formula/mainwp-cli.rb
 #   6. Commit and push the tap update
 #
 # Options:
@@ -158,7 +158,7 @@ require_cmd curl
 require_cmd shasum
 
 [[ -d "$TAP_DIR/.git" ]] || die "Tap repository not found at: $TAP_DIR"
-[[ -f "$TAP_DIR/Formula/mainwp.rb" ]] || die "Tap formula not found at: $TAP_DIR/Formula/mainwp.rb"
+[[ -f "$TAP_DIR/Formula/mainwp-cli.rb" ]] || die "Tap formula not found at: $TAP_DIR/Formula/mainwp-cli.rb"
 
 CURRENT_BRANCH=$(git branch --show-current)
 [[ "$CURRENT_BRANCH" == "main" ]] || die "Run releases from main (current branch: $CURRENT_BRANCH)."
@@ -241,7 +241,7 @@ info "sha256: $SHA256"
 
 # ---- update the Homebrew formula -----------------------------------
 
-FORMULA="$TAP_DIR/Formula/mainwp.rb"
+FORMULA="$TAP_DIR/Formula/mainwp-cli.rb"
 info "Updating $FORMULA"
 perl -0pi -e "s|url \"https://github\\.com/oscarhugopaz/mainwp-cli/archive/refs/tags/v[^\"]+\"|url \"$TARBALL_URL\"|" "$FORMULA"
 perl -0pi -e 's|sha256 "[a-f0-9]{64}"|sha256 "'"$SHA256"'"|' "$FORMULA"
@@ -253,8 +253,8 @@ if [[ "$RUN_BREW_TEST" == true ]]; then
 	info "Testing Homebrew formula with brew"
 	(
 		cd "$TAP_DIR"
-		brew install --build-from-source ./Formula/mainwp.rb
-		brew test ./Formula/mainwp.rb
+		brew install --build-from-source ./Formula/mainwp-cli.rb
+		brew test ./Formula/mainwp-cli.rb
 		brew uninstall mainwp
 	)
 fi
@@ -263,7 +263,7 @@ fi
 
 if [[ -n "$(git -C "$TAP_DIR" status --short)" ]]; then
 	info "Committing tap update"
-	git -C "$TAP_DIR" add Formula/mainwp.rb
+	git -C "$TAP_DIR" add Formula/mainwp-cli.rb
 	git -C "$TAP_DIR" commit -m "mainwp $VERSION"
 	git -C "$TAP_DIR" push origin main
 else
