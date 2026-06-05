@@ -7,6 +7,8 @@ description: Manage a MainWP Dashboard from the terminal. Use this skill when th
 
 `mainwp` is a command-line interface for the [MainWP Dashboard](https://mainwp.com) REST API v2. It is installed as a single binary, ships with shell completions, and uses [gum](https://github.com/charmbracelet/gum) for interactive prompts and [jq](https://stedolan.github.io/jq/) for JSON shaping. Source: <https://github.com/oscarhugopaz/mainwp-cli>.
 
+Skill bundle version: 0.3.5. Tracks mainwp-cli 0.3.5 and later.
+
 ## When to use this skill
 
 Load this skill when the user asks to do any of the following through a MainWP Dashboard:
@@ -22,6 +24,7 @@ Load this skill when the user asks to do any of the following through a MainWP D
 - manage **REST API keys**
 - create, edit, or delete **posts** or **pages** on child sites
 - run a global **batch** operation across multiple controllers
+- install or update the mainwp-cli skill itself (`mainwp skill install`)
 
 Do NOT load this skill for general WordPress administration tasks that do not go through a MainWP Dashboard. Do not load it for non-MainWP sites.
 
@@ -44,7 +47,7 @@ After install, verify:
 command -v mainwp && mainwp --version
 ```
 
-If `gum` or `jq` are missing, `mainwp deps install` will install them. Or `brew install gum jq` on macOS, or the platform package manager on Linux.
+If `gum` or `jq` are missing, the user can run `mainwp deps install` (which is interactive by default and skips if `--no-input` is set). Or they can install the deps directly through the platform package manager.
 
 ### Configure credentials
 
@@ -54,13 +57,35 @@ Check whether a profile is already configured:
 mainwp config get
 ```
 
-If the result is empty (`{}`), the user has no profile yet. Run the guided setup:
+If the result is `{}`, the user has no profile yet. Run the guided setup:
 
 ```bash
 mainwp init
 ```
 
-It asks for the dashboard URL (e.g. `https://dashboard.example.com`) and a Bearer API key, stores them in `~/.config/mainwp/config.json` with `0600` permissions, and verifies connectivity with `GET /sites/basic`.
+It asks for the dashboard URL (e.g. `https://dashboard.example.com`) and a Bearer API key, stores them in `~/.config/mainwp/config.json` with `0600` permissions, and verifies connectivity with `GET /sites/basic`. If the connectivity check fails, the most common reasons are:
+
+- the URL is missing the scheme (must be `https://...`)
+- the key has been revoked or does not have the right permissions
+- the dashboard permalinks are set to "Plain" - the API requires any other setting
+- a firewall is blocking the request
+
+### Self-installation (skill install)
+
+If the SKILL.md is not yet in any of the supported agent locations, suggest or run:
+
+```bash
+mainwp skill install
+```
+
+This subcommand installs the skill bundle (`SKILL.md` plus any helper files under `skills/mainwp-cli/`) into one or more of: claude-code (`~/.claude/skills/`), codex (`~/.codex/skills/`), pi (`~/.pi/agent/skills/`), opencode (`~/.config/opencode/skills/`), or global (`~/.agents/skills/`).
+
+It is interactive by default (`gum choose --no-limit` with space to toggle, enter to confirm); `all` expands to every supported agent. Non-interactive use:
+
+```bash
+mainwp skill install --all
+mainwp skill install --agent opencode --agent codex
+```
 
 ### Multiple dashboards
 
@@ -78,6 +103,8 @@ mainwp --profile staging    sites list
 mainwp --profile production sites list
 ```
 
+The `--profile NAME` flag is a *global* option: it must appear before the subcommand (`mainwp --profile staging sites list`, not `mainwp sites --profile staging list`). When the user runs `mainwp init`, the new credentials go into the currently active profile; switch with `mainwp config profile use NAME`.
+
 ### CI and one-off commands
 
 For non-interactive use, env vars override the profile:
@@ -88,7 +115,7 @@ MAINWP_API_KEY=xxxxx \
   mainwp sites list
 ```
 
-`MAINWP_URL` and `MAINWP_API_KEY` are checked in that order: flag, env, profile, error.
+`MAINWP_URL` and `MAINWP_API_KEY` are checked in that order: flag, env, profile, error. This is the recommended pattern for CI and for agents that should not write to the user's local config.
 
 ## Output formats
 
@@ -96,107 +123,87 @@ The CLI supports three output modes:
 
 | Mode      | Trigger              | What you get                                                                                |
 | --------- | -------------------- | ------------------------------------------------------------------------------------------- |
-| Table     | default (TTY + gum)  | Aligned columns with headers, gum-styled                                                    |
+| Table     | default (TTY + gum)  | Aligned columns with gum styling                                                            |
 | Plain     | `--plain`            | Tab-separated text, no styling                                                              |
-| JSON      | `--json`             | Raw API response as JSON (one document per call)                                            |
+| JSON      | `--json`             | Raw API response (one document per call)                                                    |
 | Object    | detail endpoints     | Two-column `Field / Value` layout (or JSON with `--json`)                                   |
 
-**In scripts, always prefer `--json`.** It is stable, parseable, and the only mode whose output is guaranteed not to change between releases.
+The rendered mode depends on the **TTY state of stdout**:
+
+- If `[[ -t 1 ]]` (stdout is a TTY) **and** `gum` is installed, the output is styled with `gum table`.
+- Otherwise (piped, redirected, CI, no `gum` on PATH), the CLI falls back to the plain-text path.
+- `--plain` forces the plain path even in a TTY.
+- `--json` forces the JSON path.
+
+In scripts, **always prefer `--json`**. It is stable, parseable, and the only mode whose output is guaranteed not to change between releases. The default mode (gum or plain) is for human eyes.
 
 ```bash
-mainwp --json sites list | jq '.data[] | {id, name, url, status}'
+mainwp --json sites list | jq '.data[] | {id, name, url}'
 ```
 
-## Command reference (most useful subset)
+### Empty columns are dropped
 
-The full reference is in the README and in `mainwp --help` / `mainwp help <command>`.
+Since 0.3.5, list endpoints drop columns whose values are all empty. So `mainwp clients list` shows only `ID,Name,Email` (the `Status` field is not part of the clients payload), while `mainwp sites list` still shows `ID,Name,URL,Status` because every site row has a status. An agent should not assume a fixed column set; use `--json` and inspect the response keys to discover what is available.
 
-### Sites
+### Response envelope shapes
+
+The MainWP API does not use a single shape for list endpoints. The CLI normalises every shape through `_mainwp_extract_list` (in `lib/commands/_common.sh`), so callers do not have to. The shapes you may see in `--json` output, and the tables the CLI renders from each, are:
+
+| `--json` response shape           | Renders as                                |
+| --------------------------------- | ----------------------------------------- |
+| `[a, b, c]` (bare array)           | one row per element                       |
+| `{"success":1, "data":[a, b]}`    | one row per element of `data`             |
+| `{"data":{"k": [users]}}`          | one row per user; `site` column = `k`     |
+| `{"k": obj, "k": obj}` (e.g. tags) | one row per value, with `id` from the key |
+
+For complex jq pipelines against the raw `--json` output, the third and fourth shapes are the ones to be aware of. The CLI handles them automatically; only use this table when you are working around the CLI by hand.
+
+## Common patterns
+
+### List sites
 
 ```bash
-mainwp sites list                          # all child sites
-mainwp sites basic                         # lightweight records
-mainwp sites count
-mainwp sites get 12                        # one site by id or domain
-mainwp sites plugins 12                    # plugins on one site
-mainwp sites themes 12                     # themes on one site
-
-mainwp sites add --url https://x.tld --name "X" --admin admin
-mainwp sites edit 12 --name "Renamed"
-mainwp sites sync                          # sync all
-mainwp sites sync 12                       # sync one
-mainwp sites suspend 12
-mainwp sites remove 12                     # destructive, requires confirm
-
-mainwp sites plugin activate  12 akismet/akismet.php
-mainwp sites plugin deactivate 12 akismet/akismet.php
+mainwp sites list
+mainwp sites list --status connected --per-page 50
+mainwp --json sites list | jq '.data[] | {id, name, url}'
 ```
 
-### Updates
+The first page returns the full set. Site IDs are numeric strings (`"45"`, `"44"`, etc.) even when the underlying database ID is a different number, so always quote them.
+
+### Run an update across the whole dashboard
 
 ```bash
-mainwp updates list --type plugins
 mainwp updates run-all
-mainwp updates run-site 12
-mainwp updates wp 12                       # WordPress core on one site
-mainwp updates plugins 12 --slug akismet/akismet.php
-mainwp updates ignore-plugins 12 --slug akismet/akismet.php
 ```
 
-`run-all` and `run-site` return a "started" response immediately. Wait a few minutes, then re-check with `mainwp updates list` to confirm.
+`run-all` and `run-site` return a "started" response immediately. Wait a few minutes, then re-check with `mainwp updates list` to confirm. The API does not give a synchronous "finished" signal.
 
-### Clients, tags, costs, users
+### Add a child site
 
 ```bash
-mainwp clients list
+mainwp sites add \
+  --url https://new-site.com \
+  --name "New Site" \
+  --admin admin
+```
+
+### Create a client
+
+```bash
 mainwp clients add --name "Acme" --email ops@acme.com
-mainwp clients fields add --name "Account manager"
-
-mainwp tags list
-mainwp tags add --name "Production" --color "#7fb100"
-
-mainwp costs list
-mainwp costs add --name "Hosting" --price 49 --payment-type subscription \
-  --product-type hosting --renewal-type monthly --sites 12
-
-mainwp users list --websites 12,19
-mainwp users create --username editor01 --email e@x.com --role editor --websites 12
-mainwp users update-admin-password --password 'NEW!' --groups production
 ```
 
-### Settings, monitoring, API keys
+`Status` is not part of the clients payload - do not pass `--status` here. If the response shows a `Status` column at all, the value will always be empty.
+
+### Update a single post
 
 ```bash
-mainwp settings general get
-mainwp settings monitoring get
-mainwp settings emails set daily-digest --disable=1
-
-mainwp monitoring list
-mainwp monitoring check 12
-mainwp monitoring settings 12 --interval=5m
-
-mainwp api-keys list
-mainwp api-keys add --active true --permissions read,write --description "Automation"
-mainwp api-keys delete 15
-```
-
-### Posts and pages
-
-```bash
-mainwp posts list --status publish --websites 12,19 --maximum 50
-mainwp posts create  12 --title "Release notes" --content "..." --status draft
-mainwp posts edit    12 341 --status publish
 mainwp posts update-status 12 341 publish
-mainwp posts delete  12 341
-
-mainwp pages list --clients 22
-mainwp pages create 12 --title "About" --content "..." --status draft
 ```
 
-For the `create`/`edit` calls, pass `--extra '<json>'` to forward arbitrary
-post meta, categories, or tags.
+The first ID is the site ID; the second is the post ID. The help text always shows the order.
 
-### Batch
+### Batch operation
 
 ```bash
 mainwp batch --json '{
@@ -205,7 +212,35 @@ mainwp batch --json '{
 }'
 ```
 
-The payload is a JSON object that maps to MainWP's batch schema; see <https://docs.mainwp.com/api-reference/rest-api/batch>.
+The payload must be a valid JSON object that maps to MainWP's batch schema; see <https://docs.mainwp.com/api-reference/rest-api/batch>.
+
+### Sync one or all sites
+
+```bash
+mainwp sites sync          # sync all
+mainwp sites sync 12       # sync one
+```
+
+`mainwp sites sync` with no site ID syncs every connected site; with an ID, it syncs only that one.
+
+## Error handling
+
+The CLI exits non-zero on:
+
+- network errors (host unreachable, TLS issues)
+- API errors (4xx/5xx with the API's `message` field printed to stderr)
+- validation errors (missing required args, unknown subcommands, unknown agent names)
+
+In scripts, check `$?` after each call. To debug, re-run with `--json` to see the raw response, or with `-q` to suppress informational messages. Common failures:
+
+| Symptom                                                                                 | Likely cause                                                                                              |
+| --------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| `Network error contacting ... : curl: (22) The requested URL returned error: 400`        | A `--key=value` filter was passed to a GET endpoint that does not accept a body; the CLI now passes filters as query args (since 0.3.3), but custom jq-based or curl-direct invocations can still hit this. |
+| `Network error contacting ... : curl: (22) The requested URL returned error: 500`        | A server-side failure. The body usually contains `{"code":"...","message":"..."}`. Read with `--json` to inspect. |
+| `✗ Unknown sites subcommand: '12'`                                                      | You forgot to pass the subcommand. Use `mainwp sites get 12`, not `mainwp sites 12`.                     |
+| `✗ Command 'api-keys' has no entry point.`                                              | Bug fixed in 0.3.2. If you still see it, the user is on a stale install - run `brew update && brew upgrade mainwp`. |
+| `No dashboard URL configured for profile 'X'. Run: mainwp init`                          | No profile, no env vars, no flag. Either run `mainwp init` or pass `MAINWP_URL` + `MAINWP_API_KEY`.         |
+| `column: line too long`                                                                 | Bug fixed in 0.3.4 (gum + long-value collision). Re-run with `--plain` if you see it.                       |
 
 ## How the CLI is shaped
 
@@ -214,26 +249,7 @@ The payload is a JSON object that maps to MainWP's batch schema; see <https://do
 - **Profiles are JSON** in `~/.config/mainwp/config.json` (chmod `0600`).
 - **HTTP client is curl** with the Bearer token in `Authorization`. No SDK.
 - **Bash 3.2 compatible** (the macOS system bash). The "printf + eval" trick is used to share global arrays between functions because `declare -g` does not exist in 3.2.
-
-## Common pitfalls
-
-- **Wrong site vs post ID.** Most per-resource endpoints take the site ID first and the resource ID second, e.g. `mainwp posts get 12 341` (site 12, post 341). The help text always shows the order.
-- **Tags vs clients vs sites vs posts endpoints differ in id type.** Some accept numeric IDs only, others accept numeric ID or email / domain. Read the API docs before passing strings.
-- **Updates are async.** `run-all` and `run-site` start a job and return a "started" response. They do not wait for completion.
-- **`--json` is the only mode to use in scripts.** The gum-styled output is for humans; do not pipe it to `jq` or `grep`.
-- **`--no-input` exits with an error** if a required argument is missing. Use it for unattended scripts.
-- **Cost tracker endpoints require the Cost Tracker add-on** to be enabled on the dashboard.
-- **The Bearer token is shown only once** when you create a new API key. Store it immediately.
-
-## Error handling
-
-The CLI exits non-zero on:
-
-- Network errors (host unreachable, TLS issues)
-- API errors (4xx/5xx with the API's `message` field printed to stderr)
-- Validation errors (missing required args, unknown subcommands)
-
-In scripts, check `$?` after each call. To debug, re-run with `--json` to see the raw response, or with `-q` to suppress informational messages.
+- **Three output paths** share the same data: gum (TTY), plain, and JSON. The list renderer drops empty columns automatically.
 
 ## Reference
 
@@ -241,4 +257,6 @@ In scripts, check `$?` after each call. To debug, re-run with `--json` to see th
 - MainWP REST API v2 docs: <https://docs.mainwp.com/api-reference/rest-api/overview>
 - Postman collection: <https://www.postman.com/mainwp/mainwp/collection/ujfddk4/mainwp-rest-api-v2-current>
 - Top-level help: `mainwp --help`
-- Per-command help: `mainwp help <command>`
+- Per-command help: `mainwp help <command>` or `mainwp <command> --help`
+- Skill bundle install: `mainwp skill install`
+- Configuration: `mainwp config` (subcommands: `get`, `set`, `profile`, `path`)
