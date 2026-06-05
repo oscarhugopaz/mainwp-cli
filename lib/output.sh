@@ -77,9 +77,11 @@ mainwp_render_table() {
 	local input
 	input="$(cat)"
 
-	# Sanity: make sure we have an array.
-	local first
-	first="$(printf '%s' "$input" | head -c 1)"
+	# Sanity: make sure we have an array. Read the first byte via
+	# parameter expansion rather than `head -c 1` to avoid a SIGPIPE
+	# race: a pipe-based read kills the producer (printf) on the next
+	# write, and `set -o pipefail` then aborts the whole script.
+	local first="${input:0:1}"
 	if [[ -z "$input" || "$first" != "[" ]]; then
 		# Not an array. Just print the JSON payload.
 		mainwp_print_json <<<"$input"

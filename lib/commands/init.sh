@@ -95,7 +95,12 @@ cmd_init() {
 	mainwp_success "Profile '$profile' saved."
 
 	mainwp_info "Running connectivity check..."
-	if response="$(mainwp_api_get /sites/basic per_page=1 2>&1)"; then
+	# `mainwp_api` is called as (method, path, body, ...extras-as-query).
+	# `per_page=1` is a query string filter, not a body, so it has to
+	# be passed as an extra arg (after an empty body). Passing it as
+	# the third argument makes curl POST a body to a GET, which
+	# the API rejects with HTTP 400.
+	if response="$(mainwp_api_get /sites/basic "" "per_page=1" 2>&1)"; then
 		mainwp_success "Connected to $(mainwp_config_url)"
 		if command -v jq >/dev/null 2>&1; then
 			local count

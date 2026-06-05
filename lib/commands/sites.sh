@@ -141,8 +141,11 @@ cmd_sites_count() {
 	if [[ $MAINWP_OUTPUT_FORMAT == "json" ]]; then
 		printf '%s\n' "$response"
 	else
+		# The MainWP /sites/count response is `{"count":N}` - check the
+		# most likely field names so this works across endpoint
+		# variants. The trailing `0` is the safe fallback.
 		local total
-		total="$(printf '%s' "$response" | jq -r '.total // .data.total // 0')"
+		total="$(printf '%s' "$response" | jq -r '(.count // .total // .data.count // .data.total // 0) | tostring')"
 		mainwp_info "Connected sites: $total"
 	fi
 }
