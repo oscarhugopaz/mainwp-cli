@@ -19,8 +19,8 @@ in shell pipelines.
 ```
 $ mainwp sites list
   ID  Name                URL                       Status
-  12  Samay Garden        https://wp.samaygarden…   connected
-  19  Dynamic Dutch       https://dynamicdutch.com  connected
+  12  Sitio 1             https://sitio1.com        connected
+  19  Sitio 2             https://sitio2.com        connected
 ```
 
 ## Table of contents

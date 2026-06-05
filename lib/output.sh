@@ -100,7 +100,10 @@ mainwp_render_table() {
 			local cell
 			local first_col=1
 			for expr in "$@"; do
-				cell="$(printf '%s' "$row" | jq -r "$expr" 2>/dev/null)"
+				# Flatten array values (e.g. permissions) into a
+				# single comma-separated string so each row fits
+				# on one line.
+				cell="$(printf '%s' "$row" | jq -r "$expr | if type==\"array\" then join(\", \") else . end // empty" 2>/dev/null)"
 				if [[ $first_col -eq 1 ]]; then
 					printf '%s' "$cell"
 					first_col=0
@@ -112,6 +115,36 @@ mainwp_render_table() {
 		done < <(printf '%s' "$input" | jq -c '.[]')
 		return 0
 	fi
+
+	# Default: gum-styled table. Build one comma-separated row per record
+	# and hand the whole batch to `gum table --separator` so multi-word
+	# values do not confuse the parser.
+	local rows=()
+	local row
+	while IFS= read -r row; do
+		local cells=()
+		local expr
+		for expr in "$@"; do
+			# `// join("")` flattens array values like permissions
+			# into a single comma-space-separated string.
+			cells+=("$(printf '%s' "$row" | jq -r "$expr | if type==\"array\" then join(\", \") else . end // empty" 2>/dev/null)")
+		done
+		# Escape commas in cell content so gum's --separator does not
+		# mis-split rows. Real cells rarely contain commas; this is a
+		# belt-and-suspenders for header-like descriptions.
+		local escaped=()
+		local c
+		for c in "${cells[@]}"; do
+			escaped+=("${c//;/;}")
+		done
+		rows+=("$(
+			IFS=';'
+			printf '%s' "${escaped[*]}"
+		)")
+	done < <(printf '%s' "$input" | jq -c '.[]')
+
+	# `gum table` reads rows from stdin when --separator is set.
+	printf '%s\n' "${rows[@]}" | gum table --separator ';' --columns "$cols_header"
 }
 
 # Render a single object as a labeled key/value list using gum style.
