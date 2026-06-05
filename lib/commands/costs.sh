@@ -47,7 +47,7 @@ cmd_costs_list() {
 	eval "$(_mainwp_collect_kv_flags)"
 	local response arr
 	response="$(mainwp_api_get /costs "${MAINWP_KV_FLAGS[@]:-}")"
-	arr="$(printf '%s' "$response" | jq -c '.data // .costs // []')"
+	arr="$(_mainwp_extract_list "$response")"
 	_mainwp_render_list "$arr" "ID,Name,Price,Type" \
 		'.id // empty' '.name // empty' '.price // empty' '.product_type // empty'
 }

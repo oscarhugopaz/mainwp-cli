@@ -99,16 +99,10 @@ _mainwp_forward_query_filter() {
 	printf '%s\n' "${extra[@]}"
 }
 
-# Pull a JSON array of child site records from any "data" envelope. If the
-# response isn't wrapped, returns the input unchanged.
-_mainwp_extract_sites() {
-	local input="$1"
-	if printf '%s' "$input" | jq -e 'type == "array"' >/dev/null 2>&1; then
-		printf '%s' "$input"
-	else
-		printf '%s' "$input" | jq -c '.data // .sites // []'
-	fi
-}
+# Backwards-compat shim for the old name. Real extraction logic lives
+# in `_mainwp_extract_list` in _common.sh and handles every envelope
+# shape MainWP uses (array, {data:[...]}, {key:obj}, {key:[...]}).
+_mainwp_extract_sites() { _mainwp_extract_list "$1"; }
 
 # ---- list / count ---------------------------------------------------
 

@@ -41,7 +41,7 @@ cmd_api_keys_list() {
 	eval "$(_mainwp_collect_kv_flags)"
 	local response arr
 	response="$(mainwp_api_get /rest-api/keys "${MAINWP_KV_FLAGS[@]:-}")"
-	arr="$(printf '%s' "$response" | jq -c '.data // .keys // []')"
+	arr="$(_mainwp_extract_list "$response")"
 	_mainwp_render_list "$arr" "ID,Description,Permissions,Active" \
 		'.id // empty' '.description // empty' '.permissions // empty' '.active // empty'
 }

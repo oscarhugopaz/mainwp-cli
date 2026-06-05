@@ -43,9 +43,19 @@ cmd_users_list() {
 	eval "$(_mainwp_parse_common_flags "$@")"
 	if [[ ${#REMAINING[@]} -gt 0 ]]; then set -- "${REMAINING[@]}"; else set --; fi
 	eval "$(_mainwp_collect_kv_flags)"
-	local response
+	local response arr
 	response="$(mainwp_api_get /users "${MAINWP_KV_FLAGS[@]:-}")"
-	printf '%s' "$response" | mainwp_render_object
+	arr="$(_mainwp_extract_list "$response")"
+	# The /users endpoint returns an object keyed by site URL, with the
+	# site URL preserved on each record as the `site` field by the
+	# extractor. Fall back to the key/value view if no array could be
+	# materialized.
+	if [[ "$(printf '%s' "$arr" | jq -r 'type' 2>/dev/null)" == "array" && $(printf '%s' "$arr" | jq 'length') -gt 0 ]]; then
+		_mainwp_render_list "$arr" "ID,Username,Name,Email,Role,Site" \
+			'.id // empty' '.username // empty' '.name // empty' '.email // empty' '.role // empty' '.site // empty'
+	else
+		printf '%s' "$response" | mainwp_render_object
+	fi
 }
 
 cmd_users_create() {

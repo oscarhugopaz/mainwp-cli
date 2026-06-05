@@ -93,7 +93,13 @@ mainwp_render_table() {
 		return 0
 	fi
 
-	if [[ $MAINWP_OUTPUT_FORMAT == "plain" ]] || ! command -v gum >/dev/null 2>&1; then
+	# Decide between the plain fallback and the gum-styled table.
+	# gum is only useful when stdout is a TTY: when it is not, gum
+	# tries to open /dev/tty for its alternate-screen buffer and
+	# fails with a non-zero exit, swallowing the output. By
+	# requiring -t 1 we make the fallback automatic for pipes,
+	# redirections, and CI.
+	if [[ $MAINWP_OUTPUT_FORMAT == "plain" ]] || ! command -v gum >/dev/null 2>&1 || [[ ! -t 1 ]]; then
 		printf '%s\n' "$cols_header"
 		local row
 		while IFS= read -r row; do
@@ -116,22 +122,20 @@ mainwp_render_table() {
 		return 0
 	fi
 
-	# Default: gum-styled table. Build one comma-separated row per record
-	# and hand the whole batch to `gum table --separator` so multi-word
-	# values do not confuse the parser.
+	# TTY + gum available: render a styled table. Build one ;-separated
+	# row per record and hand the whole batch to `gum table`. We use
+	# `;` as the separator (instead of the default `,`) so commas in
+	# description-style cells do not split a row into the wrong
+	# number of columns.
 	local rows=()
 	local row
 	while IFS= read -r row; do
 		local cells=()
 		local expr
 		for expr in "$@"; do
-			# `// join("")` flattens array values like permissions
-			# into a single comma-space-separated string.
 			cells+=("$(printf '%s' "$row" | jq -r "$expr | if type==\"array\" then join(\", \") else . end // empty" 2>/dev/null)")
 		done
-		# Escape commas in cell content so gum's --separator does not
-		# mis-split rows. Real cells rarely contain commas; this is a
-		# belt-and-suspenders for header-like descriptions.
+		# Defensively escape any literal `;` in cell content.
 		local escaped=()
 		local c
 		for c in "${cells[@]}"; do
@@ -143,11 +147,27 @@ mainwp_render_table() {
 		)")
 	done < <(printf '%s' "$input" | jq -c '.[]')
 
-	# `gum table` reads rows from stdin when --separator is set.
-	printf '%s\n' "${rows[@]}" | gum table --separator ';' --columns "$cols_header"
+	# If gum fails for any reason (e.g. user is in a sub-shell with
+	# no controlling terminal), fall back to plain. Capture both
+	# stdout and stderr so the user sees gum's error if it ever
+	# matters in the future.
+	if ! printf '%s\n' "${rows[@]}" | gum table --separator ';' --columns "$cols_header"; then
+		printf '%s\n' "$cols_header"
+		local r
+		for r in "${rows[@]}"; do
+			# Convert ;-separated back to tabs for plain output.
+			printf '%s\n' "${r//;/\	}"
+		done
+	fi
 }
 
 # Render a single object as a labeled key/value list using gum style.
+#
+# We deliberately avoid `column -t` here: it has a hard limit on line
+# length and dies with "line too long" on payloads that include any
+# large value (a long URL, an embedded JSON array, etc.), which used
+# to swallow the entire output. Alignment is done with printf width
+# specifiers, which has no such limit.
 mainwp_render_object() {
 	local input
 	input="$(cat)"
@@ -167,18 +187,48 @@ mainwp_render_object() {
 		return 0
 	fi
 
-	if [[ $MAINWP_OUTPUT_FORMAT == "plain" ]] || ! command -v gum >/dev/null 2>&1; then
-		printf '%s' "$input" | jq -r 'to_entries[] | "  \(.key): \(.value)"'
+	# Build a two-column "Field | Value" layout. Printf width
+	# specifiers (instead of `column -t`) keep this resilient to
+	# very long values like URLs or embedded JSON.
+	local body
+	body="$(printf '%s' "$input" | jq -r '
+		to_entries[] |
+		"  \(.key)\t\(
+			if type == "object" or type == "array"
+			then tostring | gsub("\n"; " ")
+			else tostring
+			end
+		)"
+	')"
+
+	# Compute a sensible label width: clamp between 12 and 36 so short
+	# objects do not waste space and long ones still fit.
+	local max_key=12
+	local k
+	while IFS= read -r k; do
+		[[ ${#k} -gt $max_key ]] && max_key=${#k}
+	done < <(printf '%s\n' "$body" | awk -F'\t' '{print $1}' | sed 's/^[[:space:]]*//')
+	[[ $max_key -gt 36 ]] && max_key=36
+
+	# Align: shell `printf "%-Ns"` pads to N; `awk` would also work.
+	local aligned
+	aligned="$(printf '%s\n' "$body" | awk -F'\t' -v w="$max_key" '{
+		key = $1; sub(/^[[:space:]]+/, "", key)
+		val = $2
+		printf "  %-*s  %s\n", w, key, val
+	}')"
+
+	# Plain-text fallback: just print the aligned body.
+	if [[ $MAINWP_OUTPUT_FORMAT == "plain" ]] || ! command -v gum >/dev/null 2>&1 || [[ ! -t 1 ]]; then
+		printf '%s\n' "$aligned"
 		return 0
 	fi
 
-	# Pretty two-column layout with gum.
-	local body
-	body="$(printf '%s' "$input" | jq -r 'to_entries[] | "  \(.key)\t\(.value | tostring)"' |
-		awk -F'\t' 'BEGIN{OFS="\t"} {printf "%-22s %s\n", $1, $2}')"
-
-	gum style --border rounded --padding "0 1" --margin "1 0" \
-		--border-foreground 39 "$(printf 'Field\tValue\n----\t-----\n%s' "$body" | column -t -s $'\t')"
+	# Try gum styling; fall back to plain if anything goes wrong.
+	if ! gum style --border rounded --padding "0 1" --margin "1 0" \
+		--border-foreground 39 "$aligned"; then
+		printf '%s\n' "$aligned"
+	fi
 }
 
 # Wrap a long-running command with a gum spinner.

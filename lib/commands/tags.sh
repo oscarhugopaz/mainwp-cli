@@ -44,7 +44,7 @@ cmd_tags_list() {
 	eval "$(_mainwp_collect_kv_flags)"
 	local response arr
 	response="$(mainwp_api_get /tags "${MAINWP_KV_FLAGS[@]:-}")"
-	arr="$(printf '%s' "$response" | jq -c '.data // .tags // []')"
+	arr="$(_mainwp_extract_list "$response")"
 	_mainwp_render_list "$arr" "ID,Name,Color" \
 		'.id // empty' '.name // empty' '.color // empty'
 }

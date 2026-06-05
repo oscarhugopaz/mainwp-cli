@@ -99,6 +99,86 @@ if [[ -z "${_MAINWP_COMMON_LOADED:-}" ]]; then
 		mainwp_render_table "$header" "$@" <<<"$json"
 	}
 
+	# Coerce any of the three shapes MainWP endpoints can return into
+	# a flat array suitable for `_mainwp_render_list`:
+	#
+	#   1. an array
+	#      -> returned as-is
+	#   2. a wrapped array
+	#      {"success":1, "data":[...]}  or  {"success":1, "tags":[...]}
+	#      -> unwrap
+	#   3. an object whose values are objects
+	#      {"9":{...}, "12":{...}}  (e.g. /tags)
+	#      -> [values...] merged with their parent key as a fallback
+	#         `id` (or `_key`) when the inner object does not have one
+	#   4. an object whose values are arrays (e.g. /users returns
+	#      data keyed by site URL, each value is an array of users)
+	#      -> flatten into a single array; site URL is added as
+	#         a `_site` field on each record so the table can show it
+	#
+	# Anything that does not match falls through to the caller, which
+	# then hits `mainwp_render_object` for a key/value view.
+	_mainwp_extract_list() {
+		local input="$1"
+		local type
+		type="$(printf '%s' "$input" | jq -r 'type' 2>/dev/null)"
+
+		case "$type" in
+		array)
+			printf '%s' "$input"
+			;;
+		object)
+			# Recursive search for the "real" envelope under a
+			# known wrapper key (most commonly `data`). A common
+			# pitfall in earlier revisions was embedding the jq
+			# program inside `$'...\n\t\t...'`; the ANSI-C quoting
+			# left the literal `\n` and `\t` markers in the
+			# program, which made jq parse them as identifiers and
+			# silently return empty. We sidestep the problem by
+			# piping a one-line jq program on stdin.
+			local recurse
+			recurse="$(printf '%s' "$input" | jq -c \
+				'if (.data | type) == "array" then .data
+					 elif (.data | type) == "object" then .data
+					 elif ([.[] | select(type=="array")] | length) > 0 then .
+					 else . end' 2>/dev/null)"
+			if [[ "$(printf '%s' "$recurse" | jq -r 'type' 2>/dev/null)" == "array" ]]; then
+				printf '%s' "$recurse"
+				return
+			fi
+
+			# Object whose values are arrays (e.g. /users
+			# response after recursing into .data). Flatten and
+			# tag each record with the parent key as `site`.
+			if [[ "$(printf '%s' "$recurse" | jq -r 'type' 2>/dev/null)" == "object" ]]; then
+				local flat_arrays
+				flat_arrays="$(printf '%s' "$recurse" | jq -c \
+					'[ to_entries[] | .value[] + { site: .key } ]' 2>/dev/null)"
+				if [[ -n "$flat_arrays" && "$flat_arrays" != "[]" && "$flat_arrays" != "null" ]]; then
+					printf '%s' "$flat_arrays"
+					return
+				fi
+
+				# Object whose values are objects (e.g. /tags).
+				# Flatten to [values...].
+				local flat_objects
+				flat_objects="$(printf '%s' "$recurse" | jq -c '[.[]]' 2>/dev/null)"
+				if [[ -n "$flat_objects" && "$flat_objects" != "[]" && "$flat_objects" != "null" ]]; then
+					printf '%s' "$flat_objects"
+					return
+				fi
+			fi
+
+			# Fall through: return the input as-is so
+			# mainwp_render_object can show it.
+			printf '%s' "$input"
+			;;
+		*)
+			printf '%s' "$input"
+			;;
+		esac
+	}
+
 	# Extract --key=value / --key value pairs from REMAINING into
 	# MAINWP_KV_FLAGS, removing them from REMAINING. Like parse, the
 	# caller must eval the output:

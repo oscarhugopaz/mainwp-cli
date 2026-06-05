@@ -60,7 +60,7 @@ cmd_clients_list() {
 	eval "$(_mainwp_collect_kv_flags)"
 	local response arr
 	response="$(mainwp_api_get /clients "${MAINWP_KV_FLAGS[@]:-}")"
-	arr="$(printf '%s' "$response" | jq -c '.data // .clients // []')"
+	arr="$(_mainwp_extract_list "$response")"
 	_mainwp_render_list "$arr" "ID,Name,Email,Status" \
 		'.id // empty' '.name // empty' '.client_email // .email // empty' '.status // empty'
 }
@@ -214,7 +214,7 @@ cmd_clients_fields_list() {
 	eval "$(_mainwp_collect_kv_flags)"
 	local response arr
 	response="$(mainwp_api_get /clients/fields "${MAINWP_KV_FLAGS[@]:-}")"
-	arr="$(printf '%s' "$response" | jq -c '.data // .fields // []')"
+	arr="$(_mainwp_extract_list "$response")"
 	_mainwp_render_list "$arr" "ID,Name,Description" \
 		'.field_id // .id // empty' '.name // empty' '.description // empty'
 }

@@ -52,7 +52,7 @@ cmd_monitors_list() {
 	eval "$(_mainwp_collect_kv_flags)"
 	local response arr
 	response="$(mainwp_api_get "$path" "${MAINWP_KV_FLAGS[@]:-}")"
-	arr="$(printf '%s' "$response" | jq -c '.data // .monitors // []')"
+	arr="$(_mainwp_extract_list "$response")"
 	_mainwp_render_list "$arr" "ID,URL,Status" \
 		'.id // empty' '.url // empty' '.status // empty'
 }
