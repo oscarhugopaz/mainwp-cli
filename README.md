@@ -75,7 +75,7 @@ $ mainwp sites list
 brew install oscarhugopaz/tap/mainwp-cli
 ```
 
-`brew install mainwp-cli` brings in `gum` and `jq` automatically as required
+`brew install oscarhugopaz/tap/mainwp-cli` brings in `gum` and `jq` automatically as required
 dependencies. To upgrade later:
 
 ```bash
