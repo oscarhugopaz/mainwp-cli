@@ -34,7 +34,7 @@ cmd_users() {
 	delete) cmd_users_delete "$@" ;;
 	update-admin-password) cmd_users_update_admin_password "$@" ;;
 	import) cmd_users_import "$@" ;;
-	-h | --help) cmd_users_help ;;
+	-h | --help | help) cmd_users_help ;;
 	*) mainwp_die "Unknown users subcommand: '$sub'" ;;
 	esac
 }

@@ -53,7 +53,7 @@ cmd_settings() {
 	insights) cmd_settings_section settings/dashboard-insights "$@" ;;
 	api-backups) cmd_settings_api_backups "$@" ;;
 	tools) cmd_settings_tools "$@" ;;
-	-h | --help) cmd_settings_help ;;
+	-h | --help | help) cmd_settings_help ;;
 	*) mainwp_die "Unknown settings subcommand: '$sub'" ;;
 	esac
 }

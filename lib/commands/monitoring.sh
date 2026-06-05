@@ -39,7 +39,7 @@ cmd_monitoring() {
 	check) cmd_monitor_check "$@" ;;
 	settings) cmd_monitor_settings "$@" ;;
 	global-settings) cmd_monitor_global_settings "$@" ;;
-	-h | --help) cmd_monitoring_help ;;
+	-h | --help | help) cmd_monitoring_help ;;
 	*) mainwp_die "Unknown monitoring subcommand: '$sub'" ;;
 	esac
 }

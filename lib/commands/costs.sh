@@ -36,7 +36,7 @@ cmd_costs() {
 	remove) cmd_costs_remove "$@" ;;
 	sites) cmd_costs_relationship sites "$@" ;;
 	clients) cmd_costs_relationship clients "$@" ;;
-	-h | --help) cmd_costs_help ;;
+	-h | --help | help) cmd_costs_help ;;
 	*) mainwp_die "Unknown costs subcommand: '$sub'" ;;
 	esac
 }

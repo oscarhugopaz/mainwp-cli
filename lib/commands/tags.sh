@@ -33,7 +33,7 @@ cmd_tags() {
 	remove) cmd_tags_remove "$@" ;;
 	sites) cmd_tags_relationship sites "$@" ;;
 	clients) cmd_tags_relationship clients "$@" ;;
-	-h | --help) cmd_tags_help ;;
+	-h | --help | help) cmd_tags_help ;;
 	*) mainwp_die "Unknown tags subcommand: '$sub'" ;;
 	esac
 }

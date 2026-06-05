@@ -31,7 +31,7 @@ cmd_pages() {
 	edit) cmd_pages_edit "$@" ;;
 	update-status) cmd_pages_update_status "$@" ;;
 	delete) cmd_pages_delete "$@" ;;
-	-h | --help) cmd_pages_help ;;
+	-h | --help | help) cmd_pages_help ;;
 	*) mainwp_die "Unknown pages subcommand: '$sub'" ;;
 	esac
 }

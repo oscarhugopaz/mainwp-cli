@@ -50,7 +50,7 @@ cmd_updates() {
 	ignore-wp) cmd_updates_ignore wp "$@" ;;
 	ignore-plugins) cmd_updates_ignore plugins "$@" ;;
 	ignore-themes) cmd_updates_ignore themes "$@" ;;
-	-h | --help) cmd_updates_help ;;
+	-h | --help | help) cmd_updates_help ;;
 	*) mainwp_die "Unknown updates subcommand: '$sub'" ;;
 	esac
 }

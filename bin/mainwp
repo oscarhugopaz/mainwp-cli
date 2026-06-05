@@ -221,9 +221,12 @@ mainwp_dispatch() {
 		fi
 		# shellcheck source=/dev/null
 		. "$script"
-		local fn="cmd_${cmd}"
+		# Bash function names cannot contain hyphens, so commands like
+		# `api-keys` are defined as `cmd_api_keys` in their file. The
+		# same translation is used by the help lookup above.
+		local fn="cmd_${cmd//-/_}"
 		if ! declare -F "$fn" >/dev/null; then
-			mainwp_die "Command '$cmd' has no entry point."
+			mainwp_die "Command '$cmd' has no entry point (expected function $fn in $(basename "$script"))."
 		fi
 		"$fn" "${MAINWP_ARGS[@]}"
 		;;

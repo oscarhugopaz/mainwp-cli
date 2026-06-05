@@ -39,7 +39,7 @@ cmd_posts() {
 	edit) cmd_posts_edit "$@" ;;
 	update-status) cmd_posts_update_status "$@" ;;
 	delete) cmd_posts_delete "$@" ;;
-	-h | --help) cmd_posts_help ;;
+	-h | --help | help) cmd_posts_help ;;
 	*) mainwp_die "Unknown posts subcommand: '$sub'" ;;
 	esac
 }

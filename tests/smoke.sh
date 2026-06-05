@@ -164,6 +164,28 @@ run_capture "skill install --no-input" 1 skill install --no-input >/dev/null
 # Unknown agent must fail.
 run_capture "skill install unknown agent" 1 skill install --agent bogus --no-input >/dev/null
 
+printf '\n[5d] every command handles --help\n'
+# Regression: bin/mainwp must translate "api-keys" -> "cmd_api_keys"
+# (bash function names cannot contain hyphens) and the per-command
+# case must include "help" alongside "-h|--help" so that
+# "<cmd> --help" reaches the help function.
+for cmd in init deps skill config sites clients tags updates costs users settings monitoring api-keys posts pages batch; do
+  out="$(run_capture "$cmd --help" 0 "$cmd" --help 2>&1)"
+  if echo "$out" | grep -qE 'Unknown subcommand|has no entry point|Unknown command'; then
+    printf '  \033[31m✗\033[0m %s --help reached an error path\n' "$cmd"
+    printf '    output: %s\n' "$(echo "$out" | head -2)"
+    FAIL=$((FAIL+1))
+    FAILED_TESTS+=("$cmd --help")
+  elif [[ -z "$out" ]]; then
+    printf '  \033[31m✗\033[0m %s --help produced no output\n' "$cmd"
+    FAIL=$((FAIL+1))
+    FAILED_TESTS+=("$cmd --help empty")
+  else
+    printf '  \033[32m✓\033[0m %s --help\n' "$cmd"
+    PASS=$((PASS+1))
+  fi
+done
+
 printf '\n[6] errors point to mainwp init when no profile is set\n'
 out="$(run_capture "sites list without config" 1 sites list --no-input)"
 assert_contains "init hint" "$out" "mainwp init"

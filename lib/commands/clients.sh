@@ -49,7 +49,7 @@ cmd_clients() {
 	sites-count) cmd_clients_relationship sites/count "$@" ;;
 	costs) cmd_clients_relationship costs "$@" ;;
 	fields) cmd_clients_fields "$@" ;;
-	-h | --help) cmd_clients_help ;;
+	-h | --help | help) cmd_clients_help ;;
 	*) mainwp_die "Unknown clients subcommand: '$sub'" ;;
 	esac
 }

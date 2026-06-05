@@ -30,7 +30,7 @@ cmd_api_keys() {
 	add) cmd_api_keys_add "$@" ;;
 	edit) cmd_api_keys_edit "$@" ;;
 	delete) cmd_api_keys_delete "$@" ;;
-	-h | --help) cmd_api_keys_help ;;
+	-h | --help | help) cmd_api_keys_help ;;
 	*) mainwp_die "Unknown api-keys subcommand: '$sub'" ;;
 	esac
 }
