@@ -4,7 +4,7 @@
 
 set -euo pipefail
 
-MAINWP_VERSION="0.4.3"
+MAINWP_VERSION="0.4.4"
 MAINWP_API_BASE_PATH="wp-json/mainwp/v2"
 
 # Resolve the directory holding this script and its lib/ tree, following
