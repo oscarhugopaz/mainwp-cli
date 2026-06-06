@@ -125,12 +125,13 @@ assert_contains "skill install help" "$out" "--agent"
 # Real install into a sandboxed HOME so the test is hermetic.
 SKILL_SANDBOX="$(mktemp -d)"
 HOME="$SKILL_SANDBOX" "$BIN" skill install --all --no-input >/dev/null 2>&1
-for agent in claude-code codex pi opencode global; do
+for agent in claude-code codex pi opencode hermes global; do
   case "$agent" in
     claude-code) root="$SKILL_SANDBOX/.claude/skills" ;;
     codex)       root="$SKILL_SANDBOX/.codex/skills" ;;
     pi)          root="$SKILL_SANDBOX/.pi/agent/skills" ;;
     opencode)    root="$SKILL_SANDBOX/.config/opencode/skills" ;;
+    hermes)      root="$SKILL_SANDBOX/.hermes/skills" ;;
     global)      root="$SKILL_SANDBOX/.agents/skills" ;;
   esac
   if [[ -f "$root/mainwp-cli/SKILL.md" ]]; then
@@ -164,6 +165,7 @@ mkdir -p "$SKILL_SANDBOX/.claude/skills/other-skill" \
          "$SKILL_SANDBOX/.codex/skills/other-skill" \
          "$SKILL_SANDBOX/.pi/agent/skills/other-skill" \
          "$SKILL_SANDBOX/.config/opencode/skills/other-skill" \
+         "$SKILL_SANDBOX/.hermes/skills/other-skill" \
          "$SKILL_SANDBOX/.agents/skills/other-skill"
 HOME="$SKILL_SANDBOX" "$BIN" skill install --global --all --no-input >/dev/null 2>&1
 if [[ -f "$SKILL_SANDBOX/.agents/skills/mainwp-cli/SKILL.md" \
@@ -172,10 +174,12 @@ if [[ -f "$SKILL_SANDBOX/.agents/skills/mainwp-cli/SKILL.md" \
    && -d "$SKILL_SANDBOX/.codex/skills/other-skill" \
    && -d "$SKILL_SANDBOX/.pi/agent/skills/other-skill" \
    && -d "$SKILL_SANDBOX/.config/opencode/skills/other-skill" \
+   && -d "$SKILL_SANDBOX/.hermes/skills/other-skill" \
    && ! -d "$SKILL_SANDBOX/.claude/skills/mainwp-cli" \
    && ! -d "$SKILL_SANDBOX/.codex/skills/mainwp-cli" \
    && ! -d "$SKILL_SANDBOX/.pi/agent/skills/mainwp-cli" \
-   && ! -d "$SKILL_SANDBOX/.config/opencode/skills/mainwp-cli" ]]; then
+   && ! -d "$SKILL_SANDBOX/.config/opencode/skills/mainwp-cli" \
+   && ! -d "$SKILL_SANDBOX/.hermes/skills/mainwp-cli" ]]; then
   printf '  \033[32m✓\033[0m --global installs only shared skill and preserves existing skills\n'
   PASS=$((PASS+1))
 else

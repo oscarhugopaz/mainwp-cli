@@ -26,6 +26,7 @@ MAINWP_SKILL_AGENTS=(
 	"codex:$HOME/.codex/skills"
 	"pi:$HOME/.pi/agent/skills"
 	"opencode:$HOME/.config/opencode/skills"
+	"hermes:$HOME/.hermes/skills"
 	"global:$HOME/.agents/skills"
 )
 
@@ -36,6 +37,7 @@ MAINWP_SKILL_LABELS=(
 	"codex        (~/.codex/skills)"
 	"pi           (~/.pi/agent/skills)"
 	"opencode     (~/.config/opencode/skills)"
+	"hermes       (~/.hermes/skills)"
 	"global       (~/.agents/skills)"
 	"all          (every agent above)"
 )

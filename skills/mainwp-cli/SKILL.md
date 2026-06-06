@@ -7,7 +7,7 @@ description: Manage a MainWP Dashboard from the terminal. Use this skill when th
 
 `mainwp` is a command-line interface for the [MainWP Dashboard](https://mainwp.com) REST API v2. It is installed as a single binary, ships with shell completions, and uses [gum](https://github.com/charmbracelet/gum) for interactive prompts and [jq](https://stedolan.github.io/jq/) for JSON shaping. Source: <https://github.com/oscarhugopaz/mainwp-cli>.
 
-Skill bundle version: 0.3.5. Tracks mainwp-cli 0.3.5 and later.
+Skill bundle version: 0.3.6. Tracks mainwp-cli 0.3.5 and later.
 
 ## When to use this skill
 
@@ -77,7 +77,7 @@ If the SKILL.md is not yet in any of the supported agent locations, suggest or r
 mainwp skill install
 ```
 
-This subcommand installs the skill bundle (`SKILL.md` plus any helper files under `skills/mainwp-cli/`) into one or more of: claude-code (`~/.claude/skills/`), codex (`~/.codex/skills/`), pi (`~/.pi/agent/skills/`), opencode (`~/.config/opencode/skills/`), or global (`~/.agents/skills/`).
+This subcommand installs the skill bundle (`SKILL.md` plus any helper files under `skills/mainwp-cli/`) into one or more of: claude-code (`~/.claude/skills/`), codex (`~/.codex/skills/`), pi (`~/.pi/agent/skills/`), opencode (`~/.config/opencode/skills/`), hermes (`~/.hermes/skills/`), or global (`~/.agents/skills/`).
 
 It is interactive by default (`gum choose --no-limit` with space to toggle, enter to confirm); `all` expands to every supported agent. Non-interactive use:
 

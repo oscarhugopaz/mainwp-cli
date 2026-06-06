@@ -226,6 +226,7 @@ Supported agents and their install paths:
 | `codex`      | `~/.codex/skills/mainwp-cli/`             |
 | `pi`         | `~/.pi/agent/skills/mainwp-cli/`          |
 | `opencode`   | `~/.config/opencode/skills/mainwp-cli/`   |
+| `hermes`     | `~/.hermes/skills/mainwp-cli/`            |
 | `global`     | `~/.agents/skills/mainwp-cli/`            |
 
 `--global` is exclusive: when present, it installs only into
